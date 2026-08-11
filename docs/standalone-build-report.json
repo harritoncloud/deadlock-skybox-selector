@@ -1,0 +1,21 @@
+﻿{
+    "builtAtUtc":  "2026-08-11T19:11:11.0005641Z",
+    "executable":  "dist/SkyboxSelector.exe",
+    "bytes":  399739904,
+    "sha256":  "7e3834f0279721b9c39fc612fda98422a314eb83eb691e83c0debdae1204f1cd",
+    "embeddedAsset":  {
+                          "bytes":  397106343,
+                          "sha256":  "19a2ae01383028d85d81f822c6fb8c21ca508a83169751059eca49982a6d01ec"
+                      },
+    "resources":  [
+                      "SkyboxSelector.Payload.7z.dll",
+                      "SkyboxSelector.Payload.7z.exe",
+                      "SkyboxSelector.Payload.7zip-License.txt",
+                      "SkyboxSelector.Payload.assets.sha256",
+                      "SkyboxSelector.Payload.DeadlockGameInfoInstaller.exe",
+                      "SkyboxSelector.Payload.runtime-checksums.sha256",
+                      "SkyboxSelector.Payload.select-skybox.ps1",
+                      "SkyboxSelector.Payload.skyboxes.7z",
+                      "SkyboxSelector.Payload.SkyboxSelector.cmd"
+                  ]
+}

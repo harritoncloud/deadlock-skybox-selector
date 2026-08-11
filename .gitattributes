@@ -1,0 +1,6 @@
+*.vpk filter=lfs diff=lfs merge=lfs -text
+*.exe binary
+*.dll binary
+*.png binary
+*.jpg binary
+

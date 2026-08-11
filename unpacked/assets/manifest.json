@@ -1,0 +1,305 @@
+﻿{
+    "formatVersion":  2,
+    "package":  "patchwin.cc Deadlock Skyboxes",
+    "createdAtUtc":  "2026-08-09T13:53:10.0547140Z",
+    "source":  {
+                   "author":  "HyperLine",
+                   "mod":  "Skybox Replacement",
+                   "url":  "https://gamebanana.com/mods/600744",
+                   "animeVersion":  "2.0",
+                   "realisticVersion":  "2.0",
+                   "animeMd5":  "b2dd740aad4e8aa325a79948481de039",
+                   "realisticMd5":  "39a65954f3bbc941c55d7f2695453cb6"
+               },
+    "defaultSelection":  "anime_05",
+    "variants":  [
+                     {
+                         "id":  "anime_01",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_01_dir.vpk",
+                         "preview":  "previews/anime/anime_01.png",
+                         "bytes":  2185,
+                         "sha256":  "819a40b67a8fb0c009a39072c15402abed722ca24c8413a3b6d9267d4c856ae1"
+                     },
+                     {
+                         "id":  "anime_02",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_02_dir.vpk",
+                         "preview":  "previews/anime/anime_02.jpg",
+                         "bytes":  2387,
+                         "sha256":  "094a3d6f7e98f7044ac25fb9026f93ea0cc15a2ded0f8e8a6b4f135384d20a94"
+                     },
+                     {
+                         "id":  "anime_03",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_03_dir.vpk",
+                         "preview":  "previews/anime/anime_03.jpg",
+                         "bytes":  8392162,
+                         "sha256":  "d8c8f638ac2c507572a2ce9454db19548a45f6e1fbd4b26c5f1fc84962699dbc"
+                     },
+                     {
+                         "id":  "anime_04",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_04_dir.vpk",
+                         "preview":  "previews/anime/anime_04.jpg",
+                         "bytes":  8392162,
+                         "sha256":  "e7a614ac0e3e3c55d61c0df8ef0ae8d541715e108b7730ba48623ac18828f4a2"
+                     },
+                     {
+                         "id":  "anime_05",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_05_dir.vpk",
+                         "preview":  "previews/anime/anime_05.jpg",
+                         "bytes":  67112462,
+                         "sha256":  "a7c9367f66ab09a2eb1ee49dd6948c389d9040a611d47cb31e6df01d3e5a61a8"
+                     },
+                     {
+                         "id":  "anime_06",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_06_dir.vpk",
+                         "preview":  "previews/anime/anime_06.jpg",
+                         "bytes":  67112462,
+                         "sha256":  "485a58bceb98648ba3a04723312a1c426d9585a536680a09b568315a75998902"
+                     },
+                     {
+                         "id":  "anime_07",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_07_dir.vpk",
+                         "preview":  "previews/anime/anime_07.jpg",
+                         "bytes":  33558154,
+                         "sha256":  "d400dd9410830fdb9a0b9a79f85af1d817f7d2c83f760c3ad228c438bf0fa47a"
+                     },
+                     {
+                         "id":  "anime_08",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_08_dir.vpk",
+                         "preview":  "previews/anime/anime_08.jpg",
+                         "bytes":  67112462,
+                         "sha256":  "edc500903740ff9d7f2ef93705a6f8b9a86fe8a4dfd3a0b2f0280564a8b3f50c"
+                     },
+                     {
+                         "id":  "anime_09",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_09_dir.vpk",
+                         "preview":  "previews/anime/anime_09.jpg",
+                         "bytes":  67112462,
+                         "sha256":  "4b9da58dd0abeebc3039825eae2d88f2eda8a039fe7ed3beb154c7658d3e09a3"
+                     },
+                     {
+                         "id":  "anime_10",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_10_dir.vpk",
+                         "preview":  "previews/anime/anime_10.jpg",
+                         "bytes":  67112462,
+                         "sha256":  "d5b1bcee5b2cf899e4c5a5237847af20815fb6b031509555db05cc05d3f12383"
+                     },
+                     {
+                         "id":  "anime_11",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_11_dir.vpk",
+                         "preview":  "previews/anime/anime_11.jpg",
+                         "bytes":  67112478,
+                         "sha256":  "76a836111cc85108ccc59b2e2da70fd21e99b34e6b8817bfbec9b82114d49163"
+                     },
+                     {
+                         "id":  "anime_12",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_12_dir.vpk",
+                         "preview":  "previews/anime/anime_12.jpg",
+                         "bytes":  67112462,
+                         "sha256":  "39135c739401aff1237ec7d242588a4765a2e63875824f71569932e904b81493"
+                     },
+                     {
+                         "id":  "anime_13",
+                         "category":  "anime",
+                         "displayName":  null,
+                         "entry":  "variants/anime/anime_13_dir.vpk",
+                         "preview":  "previews/anime/anime_13.jpg",
+                         "bytes":  67112462,
+                         "sha256":  "a3eee4f88f0b3454a324cdfc878bfd3fd2a8f00fcf179d9b1a15e3daf2ab78ac"
+                     },
+                     {
+                         "id":  "realistic_01",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_01_dir.vpk",
+                         "preview":  "previews/realistic/realistic_01.jpg",
+                         "bytes":  8391953,
+                         "sha256":  "045d71c45d1cf6c40f8947a4c4c3e57f80747d9d06999fbde01fe97ade264e9b"
+                     },
+                     {
+                         "id":  "realistic_02",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_02_dir.vpk",
+                         "preview":  "previews/realistic/realistic_02.jpg",
+                         "bytes":  8392088,
+                         "sha256":  "d0df491bc5e7c220c864dfec4a7279987bb64bb25433d312b6699f0518ad6d76"
+                     },
+                     {
+                         "id":  "realistic_03",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_03_dir.vpk",
+                         "preview":  "previews/realistic/realistic_03.jpg",
+                         "bytes":  8392024,
+                         "sha256":  "1808ed61fea8560ed538cd2d87a6f55776b2042cfb2b73b0780d5faa4631d148"
+                     },
+                     {
+                         "id":  "realistic_04",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_04_dir.vpk",
+                         "preview":  "previews/realistic/realistic_04.jpg",
+                         "bytes":  8392024,
+                         "sha256":  "6c141814430ef576b97f06617b6de7eb17d573db15e5b1958dd7c9b44963f3a6"
+                     },
+                     {
+                         "id":  "realistic_05",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_05_dir.vpk",
+                         "preview":  "previews/realistic/realistic_05.jpg",
+                         "bytes":  8392088,
+                         "sha256":  "c01585521e495759475b95f9dd5c0204ffa2e0f73c5f590d3920e06bb17d3992"
+                     },
+                     {
+                         "id":  "realistic_06",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_06_dir.vpk",
+                         "preview":  "previews/realistic/realistic_06.jpg",
+                         "bytes":  67112581,
+                         "sha256":  "8abd1558e40183d9c175a423eeeff03ff687d46f08f0cf53a2138cbd7c3f6c37"
+                     },
+                     {
+                         "id":  "realistic_07",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_07_dir.vpk",
+                         "preview":  "previews/realistic/realistic_07.jpg",
+                         "bytes":  67112582,
+                         "sha256":  "e180e2692f2cc6a3e8bbee5a404fe09f076389b671c66eae148f70612187c111"
+                     },
+                     {
+                         "id":  "realistic_08",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_08_dir.vpk",
+                         "preview":  "previews/realistic/realistic_08.jpg",
+                         "bytes":  8392325,
+                         "sha256":  "bb3f0e5c8b9c316ece209ac87544a80d46097fa0fd88f621067df708702b7c03"
+                     },
+                     {
+                         "id":  "realistic_09",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_09_dir.vpk",
+                         "preview":  "previews/realistic/realistic_09.jpg",
+                         "bytes":  33558148,
+                         "sha256":  "ec740e8a143acb4c16af0546d52890fedb8aa21a72084a42c80925b82062b86b"
+                     },
+                     {
+                         "id":  "realistic_10",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_10_dir.vpk",
+                         "preview":  "previews/realistic/realistic_10.jpg",
+                         "bytes":  8392325,
+                         "sha256":  "9bea64a97365e9331148c8318e51d307cd8df96118fa34bb4889a1d310dda9d8"
+                     },
+                     {
+                         "id":  "realistic_11",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_11_dir.vpk",
+                         "preview":  "previews/realistic/realistic_11.jpg",
+                         "bytes":  8392289,
+                         "sha256":  "1d6520e9b706d0f45a852a23725b23eedc8680f31052d385cd3982dafa659d15"
+                     },
+                     {
+                         "id":  "realistic_12",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_12_dir.vpk",
+                         "preview":  "previews/realistic/realistic_12.jpg",
+                         "bytes":  67112596,
+                         "sha256":  "d2878f367ea7caa3f83ff23065e835a5d6af1c1c3ea17a4645bbbf2d42304879"
+                     },
+                     {
+                         "id":  "realistic_13",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_13_dir.vpk",
+                         "preview":  "previews/realistic/realistic_13.jpg",
+                         "bytes":  8392403,
+                         "sha256":  "33d15845177deddd32f790bc1c8e63d56ddae0faea78f7b066f03b7d588f5166"
+                     },
+                     {
+                         "id":  "realistic_14",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_14_dir.vpk",
+                         "preview":  "previews/realistic/realistic_14.jpg",
+                         "bytes":  2265,
+                         "sha256":  "48bec118ac942f3feb11c249d6bb43310189f9728675070ac8ff85fe3acc353b"
+                     },
+                     {
+                         "id":  "realistic_15",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_15_dir.vpk",
+                         "preview":  "previews/realistic/realistic_15.jpg",
+                         "bytes":  8392021,
+                         "sha256":  "aa526c19d79d199966440b7c30ff043de9981f1713de2edd048474e726cb0a8a"
+                     },
+                     {
+                         "id":  "realistic_16",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_16_dir.vpk",
+                         "preview":  "previews/realistic/realistic_16.jpg",
+                         "bytes":  8391956,
+                         "sha256":  "a963942de63d1b39c8422d65b13032d03769717848a5e9c42182be4dd7c38bd9"
+                     },
+                     {
+                         "id":  "realistic_17",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_17_dir.vpk",
+                         "preview":  "previews/realistic/realistic_17.jpg",
+                         "bytes":  8392006,
+                         "sha256":  "97fc81fcce260772a663060567a96becc2eddf0ee5dcffb5212b657e472a3fa9"
+                     },
+                     {
+                         "id":  "realistic_18",
+                         "category":  "realistic",
+                         "displayName":  null,
+                         "entry":  "variants/realistic/realistic_18_dir.vpk",
+                         "preview":  "previews/realistic/realistic_18.jpg",
+                         "bytes":  8392019,
+                         "sha256":  "4868cabf838f0a32fae577472d8b34573a17f73ed521fa7b547ed3d71cad72e4"
+                     },
+                     {
+                         "id":  "realistic_19",
+                         "category":  "realistic",
+                         "displayName":  "Half-Life 2 Style",
+                         "entry":  "variants/realistic/realistic_19_dir.vpk",
+                         "preview":  "previews/realistic/realistic_19.jpg",
+                         "bytes":  8392258,
+                         "sha256":  "7dccb02cd8827baf417a2afda5f9d6a42d9353245d82e13d27b991e9c29bf96d"
+                     }
+                 ]
+}

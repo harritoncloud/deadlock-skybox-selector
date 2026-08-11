@@ -1,0 +1,16 @@
+﻿{
+    "builtAtUtc":  "2026-08-11T18:59:42.8146275Z",
+    "executable":  "SkyboxSelector.exe",
+    "bytes":  399739904,
+    "sha256":  "b35e1a07f734a2c0b7dc4625eb9cc5078ce2852e562d2e42a55c6ba4b428bdb8",
+    "embeddedAsset":  {
+                          "bytes":  397106343,
+                          "sha256":  "19a2ae01383028d85d81f822c6fb8c21ca508a83169751059eca49982a6d01ec",
+                          "animeVariants":  13,
+                          "realisticVariants":  19,
+                          "compression":  "7z solid LZMA2"
+                      },
+    "runtimeCache":  "%LOCALAPPDATA%\\DeadlockSkyboxSelector\\runtime-v2",
+    "gameCache":  "\u003cDeadlock\u003e\\patchwin.cc-skyboxes",
+    "launchesGame":  false
+}
