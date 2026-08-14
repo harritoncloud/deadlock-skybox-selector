@@ -2176,17 +2176,16 @@ internal sealed class SelectorForm : Form
             return RunFpsConfig("install");
         }, delegate
         {
-            fpsConfigButton.Text = "FPS config installed";
-            fpsConfigButton.Enabled = false;
             SetWorking(false, "FPS config ready", "Safe runtime optimizations are installed.");
+            RefreshFpsConfigState();
         });
     }
 
     private void RefreshFpsConfigState()
     {
         bool installed = IsFpsConfigInstalled();
-        fpsConfigButton.Text = installed ? "FPS config installed" : "Install FPS config";
-        fpsConfigButton.Enabled = !working && !installed;
+        fpsConfigButton.Text = installed ? "Reinstall FPS config" : "Install FPS config";
+        fpsConfigButton.Enabled = !working;
     }
 
     private bool IsFpsConfigInstalled()
@@ -2383,8 +2382,8 @@ internal sealed class SelectorForm : Form
         applyButton.Enabled = !working && selectedVariant != null &&
             !String.Equals(selectedVariant.id, currentSelection, StringComparison.OrdinalIgnoreCase);
         restoreButton.Enabled = !working && currentSelection != "vanilla";
-        if (fpsConfigButton != null && !working)
-            fpsConfigButton.Enabled = !IsFpsConfigInstalled();
+        if (fpsConfigButton != null)
+            fpsConfigButton.Enabled = !working;
         if (restoreGameInfoButton != null)
             restoreGameInfoButton.Enabled = !working && HasOriginalGameInfoBackup();
         if (working)

@@ -93,7 +93,7 @@ Silver Overcast through Nightlock.
 
 ## Optional FPS Profile
 
-The FPS button manages only its own marked block inside `autoexec.cfg`. Existing settings are preserved, a backup is created before replacement, and empty or missing config files are supported.
+The FPS button manages only its own marked block inside `autoexec.cfg`. Existing settings are preserved, a backup is created before replacement, and empty or missing config files are supported. Once installed, the button remains available as **Reinstall FPS config** and safely replaces the same managed block without creating duplicates.
 
 Client physics remains enabled. The included profile keeps `cl_ragdoll_limit "8"` without forcing `cl_phys_enabled` off.
 
