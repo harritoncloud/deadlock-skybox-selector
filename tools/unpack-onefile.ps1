@@ -35,6 +35,8 @@ New-Item -ItemType Directory -Force -Path $runtimeRoot, $assetRoot, $configRoot 
 $resourceFiles = [ordered]@{
     "SkyboxSelector.Payload.SkyboxSelector.cmd" = "SkyboxSelector.cmd"
     "SkyboxSelector.Payload.select-skybox.ps1" = "select-skybox.ps1"
+    "SkyboxSelector.Payload.install-fps-config.ps1" = "install-fps-config.ps1"
+    "SkyboxSelector.Payload.deadlock-fps.cfg" = "deadlock-fps.cfg"
     "SkyboxSelector.Payload.DeadlockGameInfoInstaller.exe" = "DeadlockGameInfoInstaller.exe"
     "SkyboxSelector.Payload.7z.exe" = "7z.exe"
     "SkyboxSelector.Payload.7z.dll" = "7z.dll"

@@ -2,82 +2,76 @@
 
 # Deadlock Skybox Selector
 
-### Change the sky. Keep the game untouched.
+### A polished one-file skybox manager for Deadlock
 
-A transparent, reproducible skybox manager for Deadlock with **32 custom skies**, instant Vanilla restore, integrity checks, and automatic backups.
+Choose from **32 custom skies** in a native Windows GUI, switch safely, and restore Vanilla at any time.
 
 <p>
-  <img src="https://img.shields.io/badge/SKYBOXES-32-CB6B4F?style=for-the-badge" alt="32 skyboxes">
-  <img src="https://img.shields.io/badge/ANIME-13-3E94B8?style=for-the-badge" alt="13 anime skyboxes">
-  <img src="https://img.shields.io/badge/REALISTIC-19-7B8B63?style=for-the-badge" alt="19 realistic skyboxes">
-  <img src="https://img.shields.io/badge/INTEGRITY-SHA--256-51596B?style=for-the-badge" alt="SHA-256 verified">
+  <img src="https://img.shields.io/badge/SKYBOXES-32-D99A4E?style=for-the-badge" alt="32 skyboxes">
+  <img src="https://img.shields.io/badge/INTERFACE-WINFORMS-5AA89C?style=for-the-badge" alt="WinForms GUI">
+  <img src="https://img.shields.io/badge/INTEGRITY-SHA--256-7C8B72?style=for-the-badge" alt="SHA-256 verified">
+  <img src="https://img.shields.io/badge/PLATFORM-WINDOWS-BC6F7F?style=for-the-badge" alt="Windows">
 </p>
 
-<img src="./unpacked/assets/previews/anime/anime_05.jpg" width="100%" alt="Deadlock with Anime 05 skybox">
+<img src="./unpacked/assets/previews/anime/anime_05.jpg" width="100%" alt="Deadlock with the Azure City skybox">
 
 <br>
 
-[**Download the latest release**](https://github.com/harritoncloud/deadlock-skybox-selector/releases/latest) · [Browse all skyboxes](#skybox-gallery) · [Build from source](#build-from-source)
+[**Download the latest release**](https://github.com/harritoncloud/deadlock-skybox-selector/releases/latest) &middot; [View the gallery](#gallery) &middot; [Build from source](#build-from-source)
 
 </div>
 
 ---
 
-## What it does
+## Highlights
 
-The selector replaces only Deadlock's sky material through a managed VPK override. It does not patch game binaries, launch the game, or leave a background process running.
+| Feature | Behavior |
+| --- | --- |
+| Modern fixed-size GUI | Custom dark Deadlock-inspired interface with animated cards and smooth scrolling. |
+| 32 named skyboxes | Every card has a readable atmosphere-based name and an image preview. |
+| In-place switching | Applying a skybox updates the current window without restarting the application. |
+| Safe override | Unknown files occupying the skybox slot are SHA-256 verified and backed up before replacement. |
+| Vanilla restore | Removes only the managed skybox override and leaves unrelated addons untouched. |
+| First-run setup | A consent screen and progress loader prepare the verified local library without a console window. |
+| Optional FPS profile | Adds a managed block to `autoexec.cfg`, preserving existing user settings and creating a backup. |
+| GameInfo installer | Mounts `citadel/addons`, keeps client physics enabled, and creates a verified backup before replacement. |
 
-<table>
-  <tr>
-    <td width="33%"><strong>32 custom skies</strong><br>13 Anime and 19 Realistic variants, including Half-Life 2 Style.</td>
-    <td width="33%"><strong>Safe switching</strong><br>Existing managed files are backed up before every change.</td>
-    <td width="33%"><strong>One-click Vanilla</strong><br>Restore the original Deadlock sky without touching unrelated addons.</td>
-  </tr>
-  <tr>
-    <td><strong>Verified assets</strong><br>SHA-256 checks protect the archive, runtime, and every extracted VPK.</td>
-    <td><strong>Portable release</strong><br>The complete selector can be distributed as one Windows executable.</td>
-    <td><strong>Auditable source</strong><br>The launcher, selector, installer, configuration, and assets are all visible here.</td>
-  </tr>
-</table>
+The selector does not launch Deadlock and does not remain active after its window is closed.
 
 ## Quick start
 
 1. Download `SkyboxSelector.exe` from [Releases](https://github.com/harritoncloud/deadlock-skybox-selector/releases).
-2. Run the selector and approve the Windows permission request when Deadlock is installed under `Program Files`.
-3. Let the first launch prepare and verify the local skybox cache.
-4. Open the Anime or Realistic preview sheet and select a skybox.
-5. Select **Vanilla** whenever you want to restore the original sky.
+2. Close Deadlock and any Deadlock mod manager.
+3. Run the selector and approve Windows elevation if the game is under `Program Files`.
+4. Approve the first-run library installation.
+5. Select a card and press **Apply**.
+6. Press **Restore** to return to the original Deadlock skybox.
 
-The managed cache is stored in `<Deadlock>/patchwin.cc-skyboxes`. Only the selected override is copied into `game/citadel/addons`.
+The verified library is stored in `<Deadlock>/dlskybox`. Legacy `deadlockcustomskybox` and `patchwin.cc-skyboxes` caches are migrated automatically.
 
-## Skybox gallery
+## Gallery
 
-### Anime collection
-
-13 bright, illustrated skies ranging from soft sunsets to saturated blue cityscapes.
+The GUI presents one unified library. The source assets retain their original internal groups only for packaging and attribution.
 
 <a href="./unpacked/assets/previews/anime-contact-sheet.jpg">
-  <img src="./unpacked/assets/previews/anime-contact-sheet.jpg" width="100%" alt="All 13 Anime skyboxes">
+  <img src="./unpacked/assets/previews/anime-contact-sheet.jpg" width="100%" alt="Skybox gallery sheet one">
 </a>
 
-### Realistic collection
-
-19 grounded lighting and weather variants, including warm sunsets, overcast scenes, night skies, and **Half-Life 2 Style**.
-
 <a href="./unpacked/assets/previews/realistic-contact-sheet.jpg">
-  <img src="./unpacked/assets/previews/realistic-contact-sheet.jpg" width="100%" alt="All 19 Realistic skyboxes">
+  <img src="./unpacked/assets/previews/realistic-contact-sheet.jpg" width="100%" alt="Skybox gallery sheet two">
 </a>
 
 ## Safety model
 
-| Protection | Behavior |
+| Protection | Implementation |
 | --- | --- |
-| Asset validation | Every source VPK is CRC-checked during packaging and SHA-256 checked at runtime. |
-| Path confinement | Cache and addon operations are restricted to known managed directories. |
-| Backups | Existing selector-managed files are backed up before replacement. |
-| Conservative cleanup | Vanilla mode removes only the known managed skybox override. |
-| Cache recovery | An incomplete cache is preserved under an `.invalid-*` name instead of being destroyed. |
-| Process safety | The selector waits for Deadlock and Deadlock Mod Manager to close before changing files. |
+| Asset integrity | The embedded archive, runtime helpers, and all 32 VPK files are checked with SHA-256. |
+| Path confinement | Cache, backup, and addon operations are restricted to validated child paths. |
+| Transactional switching | Sources are verified before copying; failed changes roll back to the previous verified file. |
+| Unknown-mod preservation | An unfamiliar `pak01_dir.vpk` is copied to a timestamped backup and verified before override. |
+| Process guard | Skybox and GameInfo changes are blocked while Deadlock or supported mod managers are running. |
+| Cache recovery | Invalid caches are quarantined under an `.invalid-*` name rather than deleted. |
+| Config preservation | The FPS profile owns only a marked block and leaves all other `autoexec.cfg` content intact. |
 
 ## Build from source
 
@@ -86,9 +80,7 @@ The managed cache is stored in `<Deadlock>/patchwin.cc-skyboxes`. Only the selec
 - Windows 10 or Windows 11
 - Windows PowerShell 5.1
 - .NET Framework C# compiler included with Windows
-- Git LFS for cloning the VPK assets
-
-Clone the repository with LFS assets:
+- Git LFS
 
 ```powershell
 git lfs install
@@ -97,50 +89,54 @@ cd deadlock-skybox-selector
 git lfs pull
 ```
 
-Verify all source and asset hashes:
+Verify the readable and extracted source trees:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\verify.ps1
 ```
 
-Build the one-file release:
+Build the one-file GUI:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\build.ps1
 ```
 
-The finished application is written to `dist/SkyboxSelector.exe`.
+The result is written to `dist/SkyboxSelector.exe`.
 
-## Project layout
+### Tests
 
-<details>
-<summary><strong>Open repository map</strong></summary>
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\fps-config.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\onefile-integration.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\test-startup.ps1
+```
+
+`tests/first-run.ps1` performs a full archive extraction and cache-migration test. The UI benchmark and in-place Apply test use an installed Deadlock cache.
+
+## Repository layout
 
 | Path | Purpose |
 | --- | --- |
-| `source/launcher` | C# source for the one-file launcher and resource extractor. |
-| `source/gameinfo-installer` | C# source for the permission-aware GameInfo installer. |
-| `source/runtime` | Interactive CMD and PowerShell selector interface. |
+| `source/launcher` | One-file launcher, WinForms GUI, manifest, and application icon. |
+| `source/gameinfo-installer` | Permission-aware GameInfo installer source. |
+| `source/runtime` | Skybox transaction logic, optional FPS profile, and compatibility command wrapper. |
 | `source/config` | GameInfo payload embedded in the installer. |
 | `unpacked/runtime` | Exact runtime resources extracted from the release executable. |
-| `unpacked/assets` | All previews, manifests, and 32 unpacked skybox VPK files. |
+| `unpacked/assets` | Preview images, manifest, and 32 unpacked VPK files. |
 | `unpacked/config` | GameInfo extracted from the nested installer. |
-| `tools` | Reproducible unpack, verify, and build scripts. |
-| `docs` | Integrity and reproducibility reports. |
-
-</details>
+| `tests` | Isolated first-run, switching, rollback, backup, and FPS-profile tests. |
+| `tools` | Reproducible build, unpack, verification, startup, and UI benchmark scripts. |
 
 ## Credits
 
-Skybox assets are based on **HyperLine's Skybox Replacement v2.0** for Deadlock. Package inspection and VPK validation use **ValveResourceFormat / Source 2 Viewer**. Full attribution is available in [CREDITS.md](./CREDITS.md).
+Skybox assets are based on **HyperLine's Skybox Replacement v2.0** for Deadlock. Package inspection and VPK validation use **ValveResourceFormat / Source 2 Viewer**. See [CREDITS.md](./CREDITS.md) for attribution.
 
-The skybox assets are third-party mod content. This repository does not assert a blanket license over those assets; confirm redistribution permission before publishing or mirroring them.
+The skybox assets are third-party mod content. Confirm redistribution permission before publishing mirrors or derivative packages.
 
 ---
 
 <div align="center">
 
-Built for players who want a different atmosphere without turning installation into guesswork.
+Made by **harriton**
 
 </div>
-

@@ -1,6 +1,8 @@
 .build/
 dist/
+.first-run-audit/
+.fps-config-test/
+.onefile-integration-test/
 *.tmp
 *.user
 *.suo
-

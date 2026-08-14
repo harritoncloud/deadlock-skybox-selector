@@ -1,28 +1,40 @@
 ﻿{
-    "extractedAtUtc":  "2026-08-11T19:04:37.1962155Z",
+    "extractedAtUtc":  "2026-08-14T00:28:08.9088360Z",
     "sourceExecutable":  {
                              "path":  "SkyboxSelector.exe",
-                             "bytes":  399739904,
-                             "sha256":  "b35e1a07f734a2c0b7dc4625eb9cc5078ce2852e562d2e42a55c6ba4b428bdb8"
+                             "bytes":  399842816,
+                             "sha256":  "d5ccea19f386e2f5f3061c6644f8c9266f3a0b1045617e7f39ae19467ee47d7a"
                          },
     "resources":  [
                       {
                           "resource":  "SkyboxSelector.Payload.SkyboxSelector.cmd",
                           "extractedTo":  "runtime/SkyboxSelector.cmd",
-                          "bytes":  6800,
-                          "sha256":  "285c547e618d2cddb89ab86dd780cca0a8e4e14912c51b08e5fece2af9f642ad"
+                          "bytes":  6886,
+                          "sha256":  "abb0129e9e24cdfd1521a507cddfd2fae9fade315a6f34eac1ebb4898e883fde"
                       },
                       {
                           "resource":  "SkyboxSelector.Payload.select-skybox.ps1",
                           "extractedTo":  "runtime/select-skybox.ps1",
-                          "bytes":  17213,
-                          "sha256":  "692f32014ac173962b8cb2ad9255468000da68f2f3a964e7621cfe179ad33354"
+                          "bytes":  17202,
+                          "sha256":  "52024bfa7a7f39a1562f4634bb0993425da82c853496f3c1c0ee2bcb6b114062"
+                      },
+                      {
+                          "resource":  "SkyboxSelector.Payload.install-fps-config.ps1",
+                          "extractedTo":  "runtime/install-fps-config.ps1",
+                          "bytes":  3710,
+                          "sha256":  "143f8a095b4b571c4c3edfd709bb3c09b2ba1b9beefdf7a754300e64d87aecea"
+                      },
+                      {
+                          "resource":  "SkyboxSelector.Payload.deadlock-fps.cfg",
+                          "extractedTo":  "runtime/deadlock-fps.cfg",
+                          "bytes":  332,
+                          "sha256":  "8482720556c34dda52506a471441ed301882c8adaf78ee0281e4f3a5519f2134"
                       },
                       {
                           "resource":  "SkyboxSelector.Payload.DeadlockGameInfoInstaller.exe",
                           "extractedTo":  "runtime/DeadlockGameInfoInstaller.exe",
-                          "bytes":  97792,
-                          "sha256":  "6e990c9bcbc5c54f80d9e399929fe8403346248b46f6e5373ac4ee7d4d538c08"
+                          "bytes":  99840,
+                          "sha256":  "52b3d304cee3ff0ccd7caef2186ba14f5679f632734b3efad22c3579f5610c22"
                       },
                       {
                           "resource":  "SkyboxSelector.Payload.7z.exe",
@@ -51,8 +63,8 @@
                       {
                           "resource":  "SkyboxSelector.Payload.runtime-checksums.sha256",
                           "extractedTo":  "runtime/runtime-checksums.sha256",
-                          "bytes":  581,
-                          "sha256":  "8f48f0f384f1849a6a1b3c48063bca8dc2dd48cbf414819fb01c156a30200738"
+                          "bytes":  755,
+                          "sha256":  "73258c59e2e776b0cde27d6704890013e212873507e8e51b7cb6ed2db9404b0a"
                       },
                       {
                           "resource":  "SkyboxSelector.Payload.skyboxes.7z",
@@ -62,8 +74,8 @@
                       }
                   ],
     "extracted":  {
-                      "files":  76,
-                      "bytes":  955794414,
+                      "files":  78,
+                      "bytes":  955800229,
                       "vpkFiles":  32
                   }
 }

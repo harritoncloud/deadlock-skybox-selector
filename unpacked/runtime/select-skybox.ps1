@@ -108,7 +108,7 @@ function Copy-VerifiedVariant(
 try {
     $DeadlockRoot = [IO.Path]::GetFullPath($DeadlockRoot).TrimEnd('\')
     if (-not $CacheRoot) {
-        $CacheRoot = Join-Path $DeadlockRoot "patchwin.cc-skyboxes"
+        $CacheRoot = Join-Path $DeadlockRoot "dlskybox"
     }
     $CacheRoot = [IO.Path]::GetFullPath($CacheRoot).TrimEnd('\')
     Assert-ChildPath $CacheRoot $DeadlockRoot "the Deadlock installation"
@@ -224,10 +224,12 @@ try {
         [ordered]@{ Path = (Join-Path $addonsRoot "pak51_dir.vpk"); Hash = "972DAB7C46AC5D0EBCA7E318C87C970124B3D3C8405D8F59F1C9E4DA974D347E" }
     )
     $legacyPresent = @()
+    $legacyPathsPresent = @()
     $unknownLegacy = @()
     foreach ($legacy in $legacyDefinitions) {
         Assert-ChildPath $legacy.Path $addonsRoot "the Deadlock addons directory"
         if (Test-Path -LiteralPath $legacy.Path -PathType Leaf) {
+            $legacyPathsPresent += $legacy.Path
             $actualLegacyHash = Get-Sha256 $legacy.Path
             if ($actualLegacyHash -eq $legacy.Hash) {
                 $legacyPresent += $legacy.Path
@@ -270,14 +272,8 @@ try {
     }
 
     Wait-ForManagedProcesses $DeadlockRoot
-    if ($unknownManagedHash) {
-        throw "Refusing to overwrite unknown addons\pak01_dir.vpk (SHA-256 $unknownManagedHash)."
-    }
-    if ($unknownLegacy.Count -gt 0) {
-        throw "Refusing to remove an unknown file that uses a reserved selector VPK name."
-    }
 
-    if ($currentSelection -eq $Selection -and $legacyPresent.Count -eq 0) {
+    if ($currentSelection -eq $Selection -and -not $unknownManagedHash -and $legacyPathsPresent.Count -eq 0) {
         Set-Content -LiteralPath $selectionFile -Value $Selection -Encoding ASCII
         Write-Host "Already selected: $Selection" -ForegroundColor Green
         exit 0
@@ -323,6 +319,9 @@ try {
             } else {
                 $backupFile = Join-Path $backupPath (Split-Path $path -Leaf)
                 Copy-Item -LiteralPath $path -Destination $backupFile -Force
+                if ((Get-Sha256 $backupFile) -ne $pathHash) {
+                    throw "Backup verification failed: $backupFile"
+                }
                 $originalFiles[$path] = [ordered]@{
                     kind = "backup"
                     source = $backupFile
@@ -351,7 +350,7 @@ try {
                 (([string]$selectedVariant.sha256).ToUpperInvariant())
         }
 
-        foreach ($legacyPath in $legacyPresent) {
+        foreach ($legacyPath in $legacyPathsPresent) {
             Remove-Item -LiteralPath $legacyPath -Force
         }
 
@@ -394,7 +393,7 @@ try {
         gameWasLaunched = $false
         assetArchiveSha256 = $readyHash.ToLowerInvariant()
         backupPath = $backupPath
-        removedLegacy = $legacyPresent
+        removedLegacy = $legacyPathsPresent
         backedUp = $backedUp
     }
     $switchManifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $backupPath "switch-manifest.json") -Encoding UTF8

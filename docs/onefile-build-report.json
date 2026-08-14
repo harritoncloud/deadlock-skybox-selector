@@ -1,16 +1,28 @@
 ﻿{
-    "builtAtUtc":  "2026-08-11T18:59:42.8146275Z",
-    "executable":  "SkyboxSelector.exe",
-    "bytes":  399739904,
-    "sha256":  "b35e1a07f734a2c0b7dc4625eb9cc5078ce2852e562d2e42a55c6ba4b428bdb8",
+    "builtAtUtc":  "2026-08-14T00:22:53.1203391Z",
+    "executable":  "dist/SkyboxSelector.exe",
+    "bytes":  399842816,
+    "sha256":  "d5ccea19f386e2f5f3061c6644f8c9266f3a0b1045617e7f39ae19467ee47d7a",
     "embeddedAsset":  {
                           "bytes":  397106343,
                           "sha256":  "19a2ae01383028d85d81f822c6fb8c21ca508a83169751059eca49982a6d01ec",
-                          "animeVariants":  13,
-                          "realisticVariants":  19,
+                          "variants":  32,
                           "compression":  "7z solid LZMA2"
                       },
     "runtimeCache":  "%LOCALAPPDATA%\\DeadlockSkyboxSelector\\runtime-v2",
-    "gameCache":  "\u003cDeadlock\u003e\\patchwin.cc-skyboxes",
-    "launchesGame":  false
+    "gameCache":  "\u003cDeadlock\u003e\\dlskybox",
+    "launchesGame":  false,
+    "resources":  [
+                      "SkyboxSelector.Payload.7z.dll",
+                      "SkyboxSelector.Payload.7z.exe",
+                      "SkyboxSelector.Payload.7zip-License.txt",
+                      "SkyboxSelector.Payload.assets.sha256",
+                      "SkyboxSelector.Payload.deadlock-fps.cfg",
+                      "SkyboxSelector.Payload.DeadlockGameInfoInstaller.exe",
+                      "SkyboxSelector.Payload.install-fps-config.ps1",
+                      "SkyboxSelector.Payload.runtime-checksums.sha256",
+                      "SkyboxSelector.Payload.select-skybox.ps1",
+                      "SkyboxSelector.Payload.skyboxes.7z",
+                      "SkyboxSelector.Payload.SkyboxSelector.cmd"
+                  ]
 }

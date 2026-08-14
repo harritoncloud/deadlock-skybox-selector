@@ -1,14 +1,15 @@
 @echo off
 setlocal EnableExtensions
-title Deadlock Skybox Selector
+title Deadlock Skybox Selector - made by harriton
 
 if not defined DEADLOCK_ROOT set "DEADLOCK_ROOT=C:\Program Files (x86)\Steam\steamapps\common\Deadlock"
-if not defined SKYBOX_CACHE_ROOT set "SKYBOX_CACHE_ROOT=%DEADLOCK_ROOT%\patchwin.cc-skyboxes"
+if not defined SKYBOX_CACHE_ROOT set "SKYBOX_CACHE_ROOT=%DEADLOCK_ROOT%\dlskybox"
 
 :startup
 cls
 echo ==================================================
 echo             Deadlock Skybox Selector
+echo                 made by harriton
 echo ==================================================
 echo Checking installation...
 echo Cache: %SKYBOX_CACHE_ROOT%
@@ -37,6 +38,7 @@ exit /b %status%
 cls
 echo ==================================================
 echo             Deadlock Skybox Selector
+echo                 made by harriton
 echo ==================================================
 set "current=vanilla / not installed"
 if exist "%SKYBOX_CACHE_ROOT%\selected-skybox.txt" set /p current=<"%SKYBOX_CACHE_ROOT%\selected-skybox.txt"
@@ -154,7 +156,7 @@ echo.
 call :run_selector select "%skybox%"
 set "result=%ERRORLEVEL%"
 echo.
-if not "%result%"=="0" echo Selection failed. No unknown VPK files were overwritten.
+if not "%result%"=="0" echo Selection failed. Existing files were restored from backup.
 pause
 goto menu
 

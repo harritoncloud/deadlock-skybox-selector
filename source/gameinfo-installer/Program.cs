@@ -24,6 +24,7 @@ internal static class Program
     private static int Main(string[] args)
     {
         bool noPause = HasArgument(args, "--no-pause");
+        bool autoConfirm = HasArgument(args, "--yes");
         try
         {
             byte[] payload = ReadEmbeddedConfig();
@@ -61,12 +62,12 @@ internal static class Program
                     throw new UnauthorizedAccessException("Administrator permission was not granted.");
                 }
 
-                int elevatedResult = RunElevatedInstall(targetPath, payload);
+                int elevatedResult = RunElevatedInstall(targetPath, payload, autoConfirm);
                 return Finish(elevatedResult, noPause || HasArgument(args, "--child"));
             }
 
             PrintInstallationSummary(targetPath, payload);
-            if (!AskYesNo("Request administrator permission and install this config? [y/N]: "))
+            if (!autoConfirm && !AskYesNo("Request administrator permission and install this config? [y/N]: "))
             {
                 Console.WriteLine("Installation cancelled. No files were changed.");
                 return Finish(0, noPause);
@@ -74,11 +75,11 @@ internal static class Program
 
             if (IsAdministrator())
             {
-                int directResult = RunElevatedInstall(targetPath, payload);
+                int directResult = RunElevatedInstall(targetPath, payload, autoConfirm);
                 return Finish(directResult, noPause);
             }
 
-            int childResult = RequestElevation(deadlockRoot);
+            int childResult = RequestElevation(deadlockRoot, autoConfirm);
             if (childResult == 0)
             {
                 Console.WriteLine("Elevated installer completed successfully.");
@@ -102,10 +103,10 @@ internal static class Program
         }
     }
 
-    private static int RunElevatedInstall(string targetPath, byte[] payload)
+    private static int RunElevatedInstall(string targetPath, byte[] payload, bool skipConfirmation)
     {
         PrintInstallationSummary(targetPath, payload);
-        if (!AskYesNo("Final confirmation: replace gameinfo.gi and create a backup? [y/N]: "))
+        if (!skipConfirmation && !AskYesNo("Final confirmation: replace gameinfo.gi and create a backup? [y/N]: "))
         {
             Console.WriteLine("Installation cancelled. No files were changed.");
             return 3;
@@ -206,12 +207,13 @@ internal static class Program
         }
     }
 
-    private static int RequestElevation(string deadlockRoot)
+    private static int RequestElevation(string deadlockRoot, bool autoConfirm)
     {
         string executablePath = Assembly.GetExecutingAssembly().Location;
         ProcessStartInfo startInfo = new ProcessStartInfo();
         startInfo.FileName = executablePath;
-        startInfo.Arguments = "--elevated --child --deadlock-root " + QuoteArgument(deadlockRoot);
+        startInfo.Arguments = "--elevated --child" + (autoConfirm ? " --yes" : "") +
+            " --deadlock-root " + QuoteArgument(deadlockRoot);
         startInfo.UseShellExecute = true;
         startInfo.Verb = "runas";
         startInfo.WorkingDirectory = Path.GetDirectoryName(executablePath);
@@ -353,12 +355,21 @@ internal static class Program
             { "r_nearz", "-1" },
             { "sc_screen_size_lod_scale_override", "-1" },
             { "sc_fade_distance_scale_override", "-1" },
-            { "r_size_cull_threshold", "0.8" },
+            { "r_size_cull_threshold", "0.85" },
             { "r_render_hair", "true" },
             { "r_pixelvisibility_partial", "true" },
             { "engine_max_ticks_to_simulate", "-1" },
+            { "citadel_unit_status_use_new", "true" },
             { "panorama_max_fps", "165" },
-            { "citadel_unit_status_use_new", "true" }
+            { "r_particle_max_size_cull", "900" },
+            { "sc_aggregate_gpu_vis_culling", "true" },
+            { "snd_steamaudio_num_diffuse_samples", "1024" },
+            { "fog_enable", "false" },
+            { "lb_enable_lights", "false" },
+            { "lb_enable_sunlight", "false" },
+            { "sc_disable_baked_lighting", "true" },
+            { "cl_phys_enabled", "true" },
+            { "r_hair_ao", "0" }
         };
 
         for (int i = 0; i < requiredAssignments.GetLength(0); i++)
@@ -367,6 +378,49 @@ internal static class Program
             if (!Regex.IsMatch(text, pattern))
             {
                 throw new InvalidDataException("Embedded config is missing required assignment: " + requiredAssignments[i, 0]);
+            }
+        }
+
+        string[] userOwnedAssignments =
+        {
+            "citadel_video_preset",
+            "r_citadel_upscaling",
+            "mat_viewportscale",
+            "r_citadel_dlss_settings_mode",
+            "r_dlss_preset",
+            "r_citadel_fsr_rcas_sharpness",
+            "r_citadel_fsr2_sharpness",
+            "r_citadel_antialiasing",
+            "r_texture_stream_mip_bias",
+            "r_dashboard_render_quality",
+            "r_citadel_shadow_quality",
+            "mat_set_shader_quality",
+            "r_citadel_ssao_quality",
+            "r_citadel_distancefield_ao_quality",
+            "r_citadel_fog_quality",
+            "r_depth_of_field",
+            "r_effects_bloom",
+            "r_post_bloom",
+            "r_arealights",
+            "r_particle_depth_feathering",
+            "fps_max",
+            "r_low_latency",
+            "r_light_sensitivity_mode",
+            "fps_max_ui",
+            "fullscreen",
+            "nowindowborder",
+            "setting.defaultres",
+            "setting.defaultresheight",
+            "setting.refreshrate_numerator",
+            "setting.refreshrate_denominator"
+        };
+
+        foreach (string name in userOwnedAssignments)
+        {
+            string pattern = @"(?im)^\s*" + Regex.Escape(name) + @"\s+(?:""[^""\r\n]*""|[^\s/{][^\r\n/]*)";
+            if (Regex.IsMatch(text, pattern))
+            {
+                throw new InvalidDataException("Embedded config overrides a user-owned setting: " + name);
             }
         }
 

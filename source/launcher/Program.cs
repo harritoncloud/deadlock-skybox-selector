@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -10,19 +13,28 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web.Script.Serialization;
+using System.Windows.Forms;
 using Microsoft.Win32;
 
 internal static class Program
 {
     private const string ResourcePrefix = "SkyboxSelector.Payload.";
     private const string AssetResource = ResourcePrefix + "skyboxes.7z";
-    private const string CacheDirectoryName = "patchwin.cc-skyboxes";
+    private const string CacheDirectoryName = "dlskybox";
+    private const string ThumbnailCacheDirectoryName = ".thumbnails-v1";
+    private static readonly string[] LegacyCacheDirectoryNames =
+    {
+        "deadlockcustomskybox",
+        "patchwin.cc-skyboxes"
+    };
 
     private static readonly IDictionary<string, string> RuntimePayloads =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "SkyboxSelector.cmd", "SkyboxSelector.cmd" },
             { "select-skybox.ps1", "select-skybox.ps1" },
+            { "install-fps-config.ps1", "install-fps-config.ps1" },
+            { "deadlock-fps.cfg", "deadlock-fps.cfg" },
             { "DeadlockGameInfoInstaller.exe", "DeadlockGameInfoInstaller.exe" },
             { "7z.exe", "7z.exe" },
             { "7z.dll", "7z.dll" },
@@ -36,6 +48,7 @@ internal static class Program
         public bool VerifyOnly;
         public bool PrepareOnly;
         public bool Elevated;
+        public bool InstallApproved;
         public string DeadlockRoot;
 
         public bool NonInteractive
@@ -56,90 +69,148 @@ internal static class Program
         public string category { get; set; }
         public string displayName { get; set; }
         public string entry { get; set; }
+        public string preview { get; set; }
         public long bytes { get; set; }
         public string sha256 { get; set; }
     }
 
+    internal sealed class StartupData
+    {
+        public string RuntimeRoot;
+        public string DeadlockRoot;
+        public string CacheRoot;
+        public string AssetHash;
+    }
+
+    [STAThread]
     private static int Main(string[] args)
     {
         Options options = null;
         try
         {
             options = ParseOptions(args);
-            string deadlockRoot = null;
-            if (!options.VerifyOnly)
+            string runtimeRoot = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "DeadlockSkyboxSelector",
+                "runtime-v2");
+
+            if (options.VerifyOnly)
             {
-                deadlockRoot = FindDeadlockRoot(options.DeadlockRoot);
-                if (!options.Elevated && !IsAdministrator() && RequiresElevation(deadlockRoot))
-                    return RestartElevated(args);
+                EnsureRuntimePayloads(runtimeRoot);
+                VerifyEmbeddedAsset(ReadAssetHash(runtimeRoot));
+                return 0;
             }
+
+            string deadlockRoot = FindDeadlockRoot(options.DeadlockRoot);
+            bool requiresLibraryInstall = RequiresLibraryInstall(deadlockRoot);
+
+            if (!options.PrepareOnly)
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+
+                if (requiresLibraryInstall && !options.InstallApproved)
+                {
+                    using (FirstRunInstallForm consent = new FirstRunInstallForm(deadlockRoot))
+                    {
+                        if (consent.ShowDialog() != DialogResult.OK)
+                            return 5;
+                    }
+                    options.InstallApproved = true;
+                }
+
+                if (!options.Elevated && !IsAdministrator() && RequiresElevation(deadlockRoot))
+                {
+                    using (PermissionRequestForm permission = new PermissionRequestForm())
+                        permission.ShowDialog();
+                    return RestartElevated(args, options.InstallApproved);
+                }
+            }
+
+            if (!options.Elevated && !IsAdministrator() && RequiresElevation(deadlockRoot))
+                return RestartElevated(args, options.InstallApproved);
 
             using (Mutex mutex = new Mutex(false, @"Local\DeadlockSkyboxSelector-OneFile-v2"))
             {
                 if (!mutex.WaitOne(0, false))
                 {
-                    Console.WriteLine("Skybox Selector is already running.");
+                    if (!options.NonInteractive)
+                        MessageBox.Show("Skybox Selector is already running.", "Deadlock Skybox Selector",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return 2;
                 }
 
-                string runtimeRoot = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "DeadlockSkyboxSelector",
-                    "runtime-v2");
-
-                Console.WriteLine("Preparing Skybox Selector...");
-                ExtractRuntimePayloads(runtimeRoot);
-                VerifyRuntime(runtimeRoot);
-                string expectedAssetHash = ReadAssetHash(runtimeRoot);
-
-                if (options.VerifyOnly)
-                {
-                    VerifyEmbeddedAsset(expectedAssetHash);
-                    Console.WriteLine("Embedded one-file verification passed.");
-                    return 0;
-                }
-
-                string cacheRoot = Path.Combine(deadlockRoot, CacheDirectoryName);
-                EnsureAssetCache(runtimeRoot, deadlockRoot, cacheRoot, expectedAssetHash);
-
                 if (options.PrepareOnly)
                 {
-                    Console.WriteLine("Asset cache preparation passed: {0}", cacheRoot);
+                    PrepareApplication(runtimeRoot, deadlockRoot);
                     return 0;
                 }
 
-                string commandPath = Path.Combine(runtimeRoot, "SkyboxSelector.cmd");
-                ProcessStartInfo startInfo = new ProcessStartInfo
+                StartupData startup = null;
+                string loadingTitle = requiresLibraryInstall
+                    ? "Installing skybox library"
+                    : "Loading skybox library";
+                string loadingDetail = requiresLibraryInstall
+                    ? "Unpacking verified files and preparing Deadlock"
+                    : "Verifying files and preparing previews";
+                using (PreparationForm preparation = new PreparationForm(delegate
                 {
-                    FileName = Environment.GetEnvironmentVariable("COMSPEC") ?? "cmd.exe",
-                    Arguments = "/d /c call " + QuoteArgument(commandPath),
-                    WorkingDirectory = runtimeRoot,
-                    UseShellExecute = false,
-                    CreateNoWindow = false
-                };
-                startInfo.EnvironmentVariables["DEADLOCK_ROOT"] = deadlockRoot;
-                startInfo.EnvironmentVariables["SKYBOX_CACHE_ROOT"] = cacheRoot;
-                startInfo.EnvironmentVariables["SKYBOX_ASSET_SHA256"] = expectedAssetHash;
-
-                using (Process child = Process.Start(startInfo))
+                    startup = PrepareApplication(runtimeRoot, deadlockRoot);
+                    if (requiresLibraryInstall)
+                        InstallRequiredComponentIfMissing(startup);
+                }, loadingTitle, loadingDetail))
                 {
-                    child.WaitForExit();
-                    return child.ExitCode;
+                    preparation.ShowDialog();
+                    if (preparation.WorkError != null)
+                        throw preparation.WorkError;
                 }
+
+                if (startup == null)
+                    throw new InvalidOperationException("Application preparation did not complete.");
+
+                Application.Run(new SelectorForm(
+                    startup.RuntimeRoot,
+                    startup.DeadlockRoot,
+                    startup.CacheRoot,
+                    startup.AssetHash));
+                return 0;
             }
         }
         catch (Exception ex)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("ERROR: {0}", ex.Message);
-            Console.ResetColor();
             if (options == null || !options.NonInteractive)
-            {
-                Console.WriteLine("Press any key to close...");
-                Console.ReadKey(true);
-            }
+                MessageBox.Show(GetErrorMessage(ex), "Deadlock Skybox Selector",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            else
+                Console.Error.WriteLine(GetErrorMessage(ex));
             return 1;
         }
+    }
+
+    private static StartupData PrepareApplication(string runtimeRoot, string deadlockRoot)
+    {
+        EnsureRuntimePayloads(runtimeRoot);
+        string expectedAssetHash = ReadAssetHash(runtimeRoot);
+        string cacheRoot = Path.Combine(deadlockRoot, CacheDirectoryName);
+        MigrateLegacyCache(deadlockRoot, cacheRoot);
+        EnsureAssetCache(runtimeRoot, deadlockRoot, cacheRoot, expectedAssetHash);
+        EnsureThumbnailCache(cacheRoot, expectedAssetHash);
+
+        return new StartupData
+        {
+            RuntimeRoot = runtimeRoot,
+            DeadlockRoot = deadlockRoot,
+            CacheRoot = cacheRoot,
+            AssetHash = expectedAssetHash
+        };
+    }
+
+    private static string GetErrorMessage(Exception error)
+    {
+        Exception current = error;
+        while (current.InnerException != null)
+            current = current.InnerException;
+        return current.Message;
     }
 
     private static Options ParseOptions(string[] args)
@@ -154,6 +225,8 @@ internal static class Program
                 options.PrepareOnly = true;
             else if (String.Equals(argument, "--elevated", StringComparison.OrdinalIgnoreCase))
                 options.Elevated = true;
+            else if (String.Equals(argument, "--install-approved", StringComparison.OrdinalIgnoreCase))
+                options.InstallApproved = true;
             else if (String.Equals(argument, "--deadlock-root", StringComparison.OrdinalIgnoreCase))
             {
                 if (++index >= args.Length)
@@ -169,17 +242,90 @@ internal static class Program
         return options;
     }
 
-    private static void ExtractRuntimePayloads(string runtimeRoot)
+    private static bool RequiresLibraryInstall(string deadlockRoot)
+    {
+        string expectedHash = ReadEmbeddedAssetHash();
+        if (IsReadyCache(Path.Combine(deadlockRoot, CacheDirectoryName), expectedHash))
+            return false;
+
+        foreach (string legacyName in LegacyCacheDirectoryNames)
+        {
+            if (IsReadyCache(Path.Combine(deadlockRoot, legacyName), expectedHash))
+                return false;
+        }
+        return true;
+    }
+
+    private static string ReadEmbeddedAssetHash()
+    {
+        byte[] metadata = ReadEmbeddedResource(
+            Assembly.GetExecutingAssembly(),
+            ResourcePrefix + "assets.sha256");
+        return ParseAssetHashMetadata(Encoding.ASCII.GetString(metadata));
+    }
+
+    private static void InstallRequiredComponentIfMissing(StartupData startup)
+    {
+        string gameInfoPath = Path.Combine(startup.DeadlockRoot, "game", "citadel", "gameinfo.gi");
+        if (File.Exists(gameInfoPath) && Regex.IsMatch(
+            File.ReadAllText(gameInfoPath),
+            "(?im)^\\s*Game\\s+\"?citadel/addons\"?\\s*$"))
+            return;
+
+        string installerPath = Path.Combine(startup.RuntimeRoot, "DeadlockGameInfoInstaller.exe");
+        if (!File.Exists(installerPath))
+            throw new FileNotFoundException("The embedded GameInfo installer is missing.", installerPath);
+
+        ProcessStartInfo info = new ProcessStartInfo
+        {
+            FileName = installerPath,
+            Arguments = "--yes --no-pause --deadlock-root " + QuoteArgument(startup.DeadlockRoot),
+            WorkingDirectory = startup.RuntimeRoot,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        using (Process process = Process.Start(info))
+        {
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            if (process.ExitCode != 0)
+            {
+                string message = (error + Environment.NewLine + output).Trim();
+                throw new InvalidOperationException(message.Length > 0
+                    ? message
+                    : "The required GameInfo component could not be installed.");
+            }
+        }
+    }
+
+    private static void EnsureRuntimePayloads(string runtimeRoot)
     {
         Directory.CreateDirectory(runtimeRoot);
         Assembly assembly = Assembly.GetExecutingAssembly();
+        byte[] checksumBytes = ReadEmbeddedResource(assembly, ResourcePrefix + "runtime-checksums.sha256");
+        IDictionary<string, string> expectedHashes = ParseRuntimeChecksums(
+            Encoding.ASCII.GetString(checksumBytes));
 
         foreach (KeyValuePair<string, string> payload in RuntimePayloads)
         {
+            if (String.Equals(payload.Key, "runtime-checksums.sha256", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            string expectedHash;
+            if (!expectedHashes.TryGetValue(payload.Key, out expectedHash))
+                throw new InvalidDataException("Embedded runtime checksum is missing: " + payload.Key);
+
             string targetPath = Path.Combine(runtimeRoot, payload.Key);
             string targetDirectory = Path.GetDirectoryName(targetPath);
             if (!String.IsNullOrEmpty(targetDirectory))
                 Directory.CreateDirectory(targetDirectory);
+
+            if (File.Exists(targetPath) && ComputeSha256(targetPath) == expectedHash)
+                continue;
 
             string temporaryPath = targetPath + ".onefile-new";
             if (File.Exists(temporaryPath))
@@ -189,41 +335,88 @@ internal static class Program
             {
                 if (input == null)
                     throw new InvalidDataException("Embedded runtime file is missing: " + payload.Key);
+                using (SHA256 sha = SHA256.Create())
                 using (FileStream output = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-                    input.CopyTo(output);
-            }
-
-            if (File.Exists(targetPath) && FilesEqual(targetPath, temporaryPath))
-            {
-                File.Delete(temporaryPath);
-                continue;
+                using (CryptoStream hashingOutput = new CryptoStream(output, sha, CryptoStreamMode.Write))
+                {
+                    input.CopyTo(hashingOutput);
+                    hashingOutput.FlushFinalBlock();
+                    if (BytesToHex(sha.Hash) != expectedHash)
+                    {
+                        hashingOutput.Close();
+                        File.Delete(temporaryPath);
+                        throw new InvalidDataException("Embedded runtime file failed verification: " + payload.Key);
+                    }
+                }
             }
 
             if (File.Exists(targetPath))
                 File.Delete(targetPath);
             File.Move(temporaryPath, targetPath);
         }
+
+        string checksumPath = Path.Combine(runtimeRoot, "runtime-checksums.sha256");
+        if (!File.Exists(checksumPath) || !BytesEqual(File.ReadAllBytes(checksumPath), checksumBytes))
+        {
+            string temporaryChecksum = checksumPath + ".onefile-new";
+            File.WriteAllBytes(temporaryChecksum, checksumBytes);
+            if (File.Exists(checksumPath))
+                File.Delete(checksumPath);
+            File.Move(temporaryChecksum, checksumPath);
+        }
     }
 
-    private static void VerifyRuntime(string runtimeRoot)
+    private static IDictionary<string, string> ParseRuntimeChecksums(string text)
     {
-        string checksumPath = Path.Combine(runtimeRoot, "runtime-checksums.sha256");
-        foreach (string line in File.ReadAllLines(checksumPath))
+        Dictionary<string, string> checksums = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string line in text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
         {
             if (line.Length < 67 || line.Substring(64, 2) != "  ")
                 continue;
-
-            string expected = line.Substring(0, 64).ToUpperInvariant();
+            string hash = line.Substring(0, 64).ToUpperInvariant();
             string name = line.Substring(66).Replace('/', Path.DirectorySeparatorChar);
-            string path = Path.Combine(runtimeRoot, name);
-            if (!File.Exists(path) || ComputeSha256(path) != expected)
-                throw new InvalidDataException("Extracted runtime file failed verification: " + name);
+            if (!Regex.IsMatch(hash, "^[0-9A-F]{64}$") || Path.IsPathRooted(name) || name.Contains(".."))
+                throw new InvalidDataException("Embedded runtime checksum metadata is invalid.");
+            checksums[name] = hash;
         }
+        return checksums;
+    }
+
+    private static byte[] ReadEmbeddedResource(Assembly assembly, string resourceName)
+    {
+        using (Stream input = assembly.GetManifestResourceStream(resourceName))
+        {
+            if (input == null)
+                throw new InvalidDataException("Embedded runtime resource is missing: " + resourceName);
+            using (MemoryStream output = new MemoryStream())
+            {
+                input.CopyTo(output);
+                return output.ToArray();
+            }
+        }
+    }
+
+    private static bool BytesEqual(byte[] first, byte[] second)
+    {
+        if (first == null || second == null || first.Length != second.Length)
+            return false;
+        for (int index = 0; index < first.Length; index++)
+        {
+            if (first[index] != second[index])
+                return false;
+        }
+        return true;
     }
 
     private static string ReadAssetHash(string runtimeRoot)
     {
-        string text = File.ReadAllText(Path.Combine(runtimeRoot, "assets.sha256")).Trim();
+        string text = File.ReadAllText(Path.Combine(runtimeRoot, "assets.sha256"));
+        return ParseAssetHashMetadata(text);
+    }
+
+    private static string ParseAssetHashMetadata(string text)
+    {
+        text = (text ?? "").Trim();
         Match match = Regex.Match(text, "^([0-9a-fA-F]{64})\\s{2}skyboxes\\.7z$");
         if (!match.Success)
             throw new InvalidDataException("Embedded asset checksum metadata is invalid.");
@@ -251,11 +444,9 @@ internal static class Program
         if (IsReadyCache(cacheRoot, expectedAssetHash))
         {
             ValidateCache(cacheRoot, false);
-            Console.WriteLine("Skybox cache is ready: {0}", cacheRoot);
             return;
         }
 
-        Console.WriteLine("First run: extracting 32 compressed skyboxes...");
         string token = Process.GetCurrentProcess().Id + "-" + Guid.NewGuid().ToString("N");
         string stagingRoot = cacheRoot + ".installing-" + token;
         string temporaryArchive = cacheRoot + ".assets-" + token + ".7z";
@@ -272,17 +463,135 @@ internal static class Program
             {
                 string quarantine = cacheRoot + ".invalid-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 8);
                 Directory.Move(cacheRoot, quarantine);
-                Console.WriteLine("Previous incomplete cache was preserved: {0}", quarantine);
             }
 
             Directory.Move(stagingRoot, cacheRoot);
-            Console.WriteLine("Skybox cache created: {0}", cacheRoot);
         }
         finally
         {
             if (File.Exists(temporaryArchive))
                 File.Delete(temporaryArchive);
             DeleteOwnedStagingDirectory(stagingRoot, deadlockRoot);
+        }
+    }
+
+    private static void EnsureThumbnailCache(string cacheRoot, string expectedAssetHash)
+    {
+        string thumbnailRoot = Path.Combine(cacheRoot, ThumbnailCacheDirectoryName);
+        string markerPath = Path.Combine(thumbnailRoot, ".ready.sha256");
+        if (File.Exists(markerPath) &&
+            String.Equals(File.ReadAllText(markerPath).Trim(), expectedAssetHash, StringComparison.OrdinalIgnoreCase))
+        {
+            bool complete = true;
+            for (int index = 1; index <= 13 && complete; index++)
+                complete = File.Exists(Path.Combine(thumbnailRoot, "anime_" + index.ToString("00") + ".jpg"));
+            for (int index = 1; index <= 19 && complete; index++)
+                complete = File.Exists(Path.Combine(thumbnailRoot, "realistic_" + index.ToString("00") + ".jpg"));
+            if (complete)
+                return;
+        }
+
+        string manifestPath = Path.Combine(cacheRoot, "manifest.json");
+        JavaScriptSerializer serializer = new JavaScriptSerializer();
+        AssetManifest manifest = serializer.Deserialize<AssetManifest>(File.ReadAllText(manifestPath));
+        if (manifest == null || manifest.variants == null || manifest.variants.Length != 32)
+            throw new InvalidDataException("Cannot prepare thumbnails from an invalid cache manifest.");
+
+        string stagingRoot = Path.Combine(
+            cacheRoot,
+            ThumbnailCacheDirectoryName + ".installing-" + Process.GetCurrentProcess().Id);
+        DeleteOwnedThumbnailDirectory(stagingRoot, cacheRoot);
+        Directory.CreateDirectory(stagingRoot);
+
+        try
+        {
+            foreach (AssetVariant variant in manifest.variants)
+            {
+                string sourcePath = ResolveSafeCacheEntry(cacheRoot, variant.preview);
+                string outputPath = Path.Combine(stagingRoot, variant.id + ".jpg");
+                CreateThumbnail(sourcePath, outputPath, 420, 236);
+            }
+            File.WriteAllText(
+                Path.Combine(stagingRoot, ".ready.sha256"),
+                expectedAssetHash + Environment.NewLine,
+                Encoding.ASCII);
+
+            DeleteOwnedThumbnailDirectory(thumbnailRoot, cacheRoot);
+            Directory.Move(stagingRoot, thumbnailRoot);
+        }
+        finally
+        {
+            DeleteOwnedThumbnailDirectory(stagingRoot, cacheRoot);
+        }
+    }
+
+    private static void CreateThumbnail(string sourcePath, string outputPath, int width, int height)
+    {
+        using (Image source = Image.FromFile(sourcePath))
+        using (Bitmap thumbnail = new Bitmap(width, height, PixelFormat.Format24bppRgb))
+        using (Graphics graphics = Graphics.FromImage(thumbnail))
+        {
+            graphics.Clear(Color.FromArgb(9, 10, 10));
+            graphics.CompositingMode = CompositingMode.SourceCopy;
+            graphics.CompositingQuality = CompositingQuality.HighQuality;
+            graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+            float scale = Math.Max((float)width / source.Width, (float)height / source.Height);
+            int drawWidth = Math.Max(1, (int)Math.Ceiling(source.Width * scale));
+            int drawHeight = Math.Max(1, (int)Math.Ceiling(source.Height * scale));
+            int left = (width - drawWidth) / 2;
+            int top = (height - drawHeight) / 2;
+            graphics.DrawImage(source, new Rectangle(left, top, drawWidth, drawHeight));
+
+            ImageCodecInfo jpegCodec = null;
+            foreach (ImageCodecInfo codec in ImageCodecInfo.GetImageEncoders())
+            {
+                if (String.Equals(codec.MimeType, "image/jpeg", StringComparison.OrdinalIgnoreCase))
+                {
+                    jpegCodec = codec;
+                    break;
+                }
+            }
+            if (jpegCodec == null)
+                throw new InvalidOperationException("Windows JPEG encoder is unavailable.");
+
+            using (EncoderParameters parameters = new EncoderParameters(1))
+            {
+                parameters.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 90L);
+                thumbnail.Save(outputPath, jpegCodec, parameters);
+            }
+        }
+    }
+
+    private static void DeleteOwnedThumbnailDirectory(string path, string cacheRoot)
+    {
+        if (!Directory.Exists(path))
+            return;
+
+        string fullRoot = Path.GetFullPath(cacheRoot).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        string fullPath = Path.GetFullPath(path);
+        string leaf = Path.GetFileName(fullPath);
+        if (!fullPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase) ||
+            (!String.Equals(leaf, ThumbnailCacheDirectoryName, StringComparison.OrdinalIgnoreCase) &&
+             !leaf.StartsWith(ThumbnailCacheDirectoryName + ".installing-", StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Refusing to remove an unexpected thumbnail directory: " + fullPath);
+        Directory.Delete(fullPath, true);
+    }
+
+    private static void MigrateLegacyCache(string deadlockRoot, string cacheRoot)
+    {
+        if (Directory.Exists(cacheRoot))
+            return;
+
+        foreach (string legacyName in LegacyCacheDirectoryNames)
+        {
+            string legacyCacheRoot = Path.Combine(deadlockRoot, legacyName);
+            if (!Directory.Exists(legacyCacheRoot))
+                continue;
+
+            Directory.Move(legacyCacheRoot, cacheRoot);
+            return;
         }
     }
 
@@ -424,8 +733,11 @@ internal static class Program
         if (!String.IsNullOrWhiteSpace(explicitRoot))
             return ValidateDeadlockRoot(explicitRoot);
 
+        string defaultRoot = @"C:\Program Files (x86)\Steam\steamapps\common\Deadlock";
+        if (File.Exists(Path.Combine(defaultRoot, "game", "citadel", "gameinfo.gi")))
+            return defaultRoot;
+
         List<string> candidates = new List<string>();
-        candidates.Add(@"C:\Program Files (x86)\Steam\steamapps\common\Deadlock");
         foreach (string steamRoot in FindSteamRoots())
         {
             candidates.Add(Path.Combine(steamRoot, "steamapps", "common", "Deadlock"));
@@ -531,9 +843,11 @@ internal static class Program
         return principal.IsInRole(WindowsBuiltInRole.Administrator);
     }
 
-    private static int RestartElevated(string[] originalArgs)
+    private static int RestartElevated(string[] originalArgs, bool installApproved)
     {
         List<string> arguments = new List<string>(originalArgs);
+        if (installApproved && !ContainsArgument(arguments, "--install-approved"))
+            arguments.Add("--install-approved");
         arguments.Add("--elevated");
         StringBuilder commandLine = new StringBuilder();
         foreach (string argument in arguments)
@@ -563,19 +877,19 @@ internal static class Program
         catch (Win32Exception ex)
         {
             if (ex.NativeErrorCode == 1223)
-            {
-                Console.WriteLine("Administrator permission was cancelled. No files were changed.");
                 return 5;
-            }
             throw;
         }
     }
 
-    private static bool FilesEqual(string first, string second)
+    private static bool ContainsArgument(IEnumerable<string> arguments, string expected)
     {
-        FileInfo a = new FileInfo(first);
-        FileInfo b = new FileInfo(second);
-        return a.Length == b.Length && ComputeSha256(first) == ComputeSha256(second);
+        foreach (string argument in arguments)
+        {
+            if (String.Equals(argument, expected, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     private static string ComputeSha256(string path)
