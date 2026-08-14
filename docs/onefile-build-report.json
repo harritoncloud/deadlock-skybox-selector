@@ -1,8 +1,8 @@
 ﻿{
-    "builtAtUtc":  "2026-08-14T07:47:05.2034090Z",
+    "builtAtUtc":  "2026-08-14T17:46:22.1599516Z",
     "executable":  "dist/SkyboxSelector.exe",
-    "bytes":  399843328,
-    "sha256":  "5bccc4e680b4b388096a209746f0bcd81595048e2228897497844e8ef10b21a5",
+    "bytes":  399848960,
+    "sha256":  "8cec66233e6863b06e3d25498c7c242bfd979aebcbd51425be752949253f2d84",
     "embeddedAsset":  {
                           "bytes":  397106343,
                           "sha256":  "19a2ae01383028d85d81f822c6fb8c21ca508a83169751059eca49982a6d01ec",

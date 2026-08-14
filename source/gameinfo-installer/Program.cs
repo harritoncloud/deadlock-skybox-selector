@@ -25,6 +25,7 @@ internal static class Program
     {
         bool noPause = HasArgument(args, "--no-pause");
         bool autoConfirm = HasArgument(args, "--yes");
+        bool restore = HasArgument(args, "--restore");
         try
         {
             byte[] payload = ReadEmbeddedConfig();
@@ -48,10 +49,11 @@ internal static class Program
             string deadlockRoot = ResolveDeadlockRoot(args);
             string targetPath = Path.Combine(deadlockRoot, @"game\citadel\gameinfo.gi");
             ValidateInstallation(targetPath);
+            string restoreBackupPath = restore ? FindOriginalBackup(targetPath) : null;
 
             if (IsManagedProcessRunning())
             {
-                throw new InvalidOperationException("Close Deadlock and Deadlock Mod Manager before installing the config.");
+                throw new InvalidOperationException("Close Deadlock and Deadlock Mod Manager before changing GameInfo.");
             }
 
             bool elevatedMode = HasArgument(args, "--elevated");
@@ -62,24 +64,34 @@ internal static class Program
                     throw new UnauthorizedAccessException("Administrator permission was not granted.");
                 }
 
-                int elevatedResult = RunElevatedInstall(targetPath, payload, autoConfirm);
+                int elevatedResult = restore
+                    ? RunElevatedRestore(targetPath, restoreBackupPath, autoConfirm)
+                    : RunElevatedInstall(targetPath, payload, autoConfirm);
                 return Finish(elevatedResult, noPause || HasArgument(args, "--child"));
             }
 
-            PrintInstallationSummary(targetPath, payload);
-            if (!autoConfirm && !AskYesNo("Request administrator permission and install this config? [y/N]: "))
+            if (restore)
+                PrintRestoreSummary(targetPath, restoreBackupPath);
+            else
+                PrintInstallationSummary(targetPath, payload);
+            string confirmation = restore
+                ? "Request administrator permission and restore the original GameInfo backup? [y/N]: "
+                : "Request administrator permission and install this config? [y/N]: ";
+            if (!autoConfirm && !AskYesNo(confirmation))
             {
-                Console.WriteLine("Installation cancelled. No files were changed.");
+                Console.WriteLine("Operation cancelled. No files were changed.");
                 return Finish(0, noPause);
             }
 
             if (IsAdministrator())
             {
-                int directResult = RunElevatedInstall(targetPath, payload, autoConfirm);
+                int directResult = restore
+                    ? RunElevatedRestore(targetPath, restoreBackupPath, autoConfirm)
+                    : RunElevatedInstall(targetPath, payload, autoConfirm);
                 return Finish(directResult, noPause);
             }
 
-            int childResult = RequestElevation(deadlockRoot, autoConfirm);
+            int childResult = RequestElevation(deadlockRoot, autoConfirm, restore);
             if (childResult == 0)
             {
                 Console.WriteLine("Elevated installer completed successfully.");
@@ -123,6 +135,24 @@ internal static class Program
         return 0;
     }
 
+    private static int RunElevatedRestore(string targetPath, string backupPath, bool skipConfirmation)
+    {
+        PrintRestoreSummary(targetPath, backupPath);
+        if (!skipConfirmation && !AskYesNo("Final confirmation: restore the original GameInfo backup? [y/N]: "))
+        {
+            Console.WriteLine("Restore cancelled. No files were changed.");
+            return 3;
+        }
+
+        string currentBackupPath = RestoreBackup(targetPath, backupPath);
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("Restored and verified: {0}", targetPath);
+        Console.ResetColor();
+        if (!String.IsNullOrEmpty(currentBackupPath))
+            Console.WriteLine("Previous current config: {0}", currentBackupPath);
+        return 0;
+    }
+
     private static void PrintInstallationSummary(string targetPath, byte[] payload)
     {
         Console.WriteLine("Deadlock GameInfo Installer");
@@ -133,6 +163,18 @@ internal static class Program
             Console.WriteLine("Current SHA-256:  {0}", ComputeSha256(File.ReadAllBytes(targetPath)));
         }
         Console.WriteLine("The installer does not launch Deadlock.");
+        Console.WriteLine();
+    }
+
+    private static void PrintRestoreSummary(string targetPath, string backupPath)
+    {
+        Console.WriteLine("Deadlock GameInfo Restore");
+        Console.WriteLine("Target: {0}", targetPath);
+        Console.WriteLine("Original backup: {0}", backupPath);
+        Console.WriteLine("Backup SHA-256: {0}", ComputeSha256(File.ReadAllBytes(backupPath)));
+        if (File.Exists(targetPath))
+            Console.WriteLine("Current SHA-256: {0}", ComputeSha256(File.ReadAllBytes(targetPath)));
+        Console.WriteLine("The current config will be backed up before restoration.");
         Console.WriteLine();
     }
 
@@ -207,12 +249,109 @@ internal static class Program
         }
     }
 
-    private static int RequestElevation(string deadlockRoot, bool autoConfirm)
+    private static string FindOriginalBackup(string targetPath)
+    {
+        string directory = Path.GetDirectoryName(targetPath);
+        if (String.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+            throw new DirectoryNotFoundException("Deadlock citadel directory is missing: " + directory);
+
+        string filter = Path.GetFileName(targetPath) + ".patchwin-backup-*";
+        string[] backups = Directory.GetFiles(directory, filter, SearchOption.TopDirectoryOnly);
+        Array.Sort(backups, StringComparer.OrdinalIgnoreCase);
+        if (backups.Length == 0)
+            throw new FileNotFoundException("The original GameInfo backup was not found. Install the component once before using restore.");
+
+        ValidateRestoreCandidate(File.ReadAllBytes(backups[0]));
+        return backups[0];
+    }
+
+    private static string RestoreBackup(string targetPath, string backupPath)
+    {
+        byte[] restoredData = File.ReadAllBytes(backupPath);
+        ValidateRestoreCandidate(restoredData);
+
+        string expectedHash = ComputeSha256(restoredData);
+        string temporaryPath = targetPath + ".patchwin-restore-new";
+        string currentBackupPath = null;
+        byte[] currentData = File.Exists(targetPath) ? File.ReadAllBytes(targetPath) : null;
+
+        if (File.Exists(temporaryPath))
+            File.Delete(temporaryPath);
+
+        try
+        {
+            File.WriteAllBytes(temporaryPath, restoredData);
+            if (!String.Equals(ComputeSha256(File.ReadAllBytes(temporaryPath)), expectedHash, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("Temporary restore verification failed.");
+
+            if (File.Exists(targetPath))
+            {
+                currentBackupPath = targetPath + ".patchwin-pre-restore-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff");
+                File.Replace(temporaryPath, targetPath, currentBackupPath, true);
+            }
+            else
+            {
+                File.Move(temporaryPath, targetPath);
+            }
+
+            if (!String.Equals(ComputeSha256(File.ReadAllBytes(targetPath)), expectedHash, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("Restored config verification failed.");
+            if (currentData != null && !String.Equals(
+                ComputeSha256(File.ReadAllBytes(currentBackupPath)),
+                ComputeSha256(currentData),
+                StringComparison.OrdinalIgnoreCase))
+                throw new IOException("Current config backup verification failed.");
+            return currentBackupPath;
+        }
+        catch
+        {
+            try
+            {
+                if (currentData != null)
+                    File.WriteAllBytes(targetPath, currentData);
+                else if (File.Exists(targetPath))
+                    File.Delete(targetPath);
+            }
+            catch
+            {
+                // Preserve the original restore error for the caller.
+            }
+            throw;
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+                File.Delete(temporaryPath);
+        }
+    }
+
+    private static void ValidateRestoreCandidate(byte[] data)
+    {
+        if (data == null || data.Length == 0)
+            throw new InvalidDataException("The original GameInfo backup is empty.");
+
+        string text = new UTF8Encoding(false, true).GetString(data);
+        if (text.IndexOf("GameInfo", StringComparison.OrdinalIgnoreCase) < 0)
+            throw new InvalidDataException("The original backup is not a valid gameinfo.gi file.");
+
+        int openingBraces = 0;
+        int closingBraces = 0;
+        foreach (char value in text)
+        {
+            if (value == '{') openingBraces++;
+            if (value == '}') closingBraces++;
+        }
+        if (openingBraces == 0 || openingBraces != closingBraces)
+            throw new InvalidDataException("The original GameInfo backup has unbalanced braces.");
+    }
+
+    private static int RequestElevation(string deadlockRoot, bool autoConfirm, bool restore)
     {
         string executablePath = Assembly.GetExecutingAssembly().Location;
         ProcessStartInfo startInfo = new ProcessStartInfo();
         startInfo.FileName = executablePath;
         startInfo.Arguments = "--elevated --child" + (autoConfirm ? " --yes" : "") +
+            (restore ? " --restore" : "") +
             " --deadlock-root " + QuoteArgument(deadlockRoot);
         startInfo.UseShellExecute = true;
         startInfo.Verb = "runas";
@@ -458,6 +597,25 @@ internal static class Program
             if (!String.Equals(ComputeSha256(File.ReadAllBytes(targetPath)), ComputeSha256(payload), StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Self-test target hash mismatch.");
+            }
+
+            string discoveredBackup = FindOriginalBackup(targetPath);
+            if (!String.Equals(discoveredBackup, backupPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Self-test selected the wrong original backup.");
+            }
+            string currentBackupPath = RestoreBackup(targetPath, discoveredBackup);
+            if (String.IsNullOrEmpty(currentBackupPath) || !File.Exists(currentBackupPath))
+            {
+                throw new InvalidOperationException("Self-test did not back up the current config before restore.");
+            }
+            if (!String.Equals(ComputeSha256(File.ReadAllBytes(targetPath)), ComputeSha256(originalData), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Self-test restore target hash mismatch.");
+            }
+            if (!String.Equals(ComputeSha256(File.ReadAllBytes(currentBackupPath)), ComputeSha256(payload), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Self-test pre-restore backup hash mismatch.");
             }
         }
         finally

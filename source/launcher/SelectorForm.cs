@@ -1324,6 +1324,7 @@ internal sealed class SelectorForm : Form
     private Label selectionDetail;
     private Panel statusDot;
     private ActionButton installButton;
+    private ActionButton restoreGameInfoButton;
     private ActionButton fpsConfigButton;
     private ActionButton applyButton;
     private ActionButton restoreButton;
@@ -1821,14 +1822,23 @@ internal sealed class SelectorForm : Form
 
         installButton = new ActionButton();
         installButton.Location = new Point(18, 20);
-        installButton.Size = new Size(190, 44);
+        installButton.Size = new Size(176, 44);
         installButton.Text = "Install component";
         installButton.Tone = ActionButtonTone.Install;
         installButton.Click += delegate { InstallComponent(); };
         panel.Controls.Add(installButton);
 
+        restoreGameInfoButton = new ActionButton();
+        restoreGameInfoButton.AccessibleName = "Restore default GameInfo";
+        restoreGameInfoButton.Location = new Point(204, 20);
+        restoreGameInfoButton.Size = new Size(86, 44);
+        restoreGameInfoButton.Text = "Default GI";
+        restoreGameInfoButton.Tone = ActionButtonTone.Restore;
+        restoreGameInfoButton.Click += delegate { RestoreDefaultGameInfo(); };
+        panel.Controls.Add(restoreGameInfoButton);
+
         fpsConfigButton = new ActionButton();
-        fpsConfigButton.Location = new Point(222, 20);
+        fpsConfigButton.Location = new Point(302, 20);
         fpsConfigButton.Size = new Size(180, 44);
         fpsConfigButton.Text = "Install FPS config";
         fpsConfigButton.Tone = ActionButtonTone.Install;
@@ -2073,32 +2083,83 @@ internal sealed class SelectorForm : Form
 
         RunOperation("Installing component", delegate
         {
-            string installer = Path.Combine(runtimeRoot, "DeadlockGameInfoInstaller.exe");
-            ProcessStartInfo info = new ProcessStartInfo();
-            info.FileName = installer;
-            info.Arguments = "--yes --no-pause --deadlock-root " + Quote(deadlockRoot);
-            info.WorkingDirectory = runtimeRoot;
-            info.UseShellExecute = false;
-            info.CreateNoWindow = true;
-            info.RedirectStandardOutput = true;
-            info.RedirectStandardError = true;
-            using (Process process = Process.Start(info))
-            {
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-                process.WaitForExit();
-                return new OperationResult
-                {
-                    ExitCode = process.ExitCode,
-                    Output = output + Environment.NewLine + error
-                };
-            }
+            return RunGameInfoInstaller(false);
         }, delegate
         {
             installButton.Text = "Component installed";
             installButton.Enabled = false;
             SetWorking(false, "Ready", "GameInfo component installed successfully.");
         });
+    }
+
+    private void RestoreDefaultGameInfo()
+    {
+        if (IsManagedProcessRunning())
+        {
+            MessageBox.Show("Close Deadlock and Deadlock Mod Manager before restoring GameInfo.",
+                "Deadlock is running", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        if (!HasOriginalGameInfoBackup())
+        {
+            MessageBox.Show("The original GameInfo backup was not found. Install the component once before using restore.",
+                "Backup not found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        if (MessageBox.Show(
+            "Restore the original gameinfo.gi from the first verified backup? The current file will also be backed up.",
+            "Restore default GameInfo",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question) != DialogResult.Yes)
+            return;
+
+        RunOperation("Restoring default GameInfo", delegate
+        {
+            return RunGameInfoInstaller(true);
+        }, delegate
+        {
+            SetWorking(false, "GameInfo restored", "The original gameinfo.gi has been restored.");
+            RefreshStatusAsync();
+        });
+    }
+
+    private OperationResult RunGameInfoInstaller(bool restore)
+    {
+        string installer = Path.Combine(runtimeRoot, "DeadlockGameInfoInstaller.exe");
+        ProcessStartInfo info = new ProcessStartInfo();
+        info.FileName = installer;
+        info.Arguments = "--yes --no-pause" + (restore ? " --restore" : "") +
+            " --deadlock-root " + Quote(deadlockRoot);
+        info.WorkingDirectory = runtimeRoot;
+        info.UseShellExecute = false;
+        info.CreateNoWindow = true;
+        info.RedirectStandardOutput = true;
+        info.RedirectStandardError = true;
+        using (Process process = Process.Start(info))
+        {
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            return new OperationResult
+            {
+                ExitCode = process.ExitCode,
+                Output = output + Environment.NewLine + error
+            };
+        }
+    }
+
+    private bool HasOriginalGameInfoBackup()
+    {
+        try
+        {
+            string directory = Path.Combine(deadlockRoot, "game", "citadel");
+            return Directory.Exists(directory) &&
+                Directory.GetFiles(directory, "gameinfo.gi.patchwin-backup-*", SearchOption.TopDirectoryOnly).Length > 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private void InstallFpsConfig()
@@ -2324,6 +2385,8 @@ internal sealed class SelectorForm : Form
         restoreButton.Enabled = !working && currentSelection != "vanilla";
         if (fpsConfigButton != null && !working)
             fpsConfigButton.Enabled = !IsFpsConfigInstalled();
+        if (restoreGameInfoButton != null)
+            restoreGameInfoButton.Enabled = !working && HasOriginalGameInfoBackup();
         if (working)
             installButton.Enabled = false;
     }

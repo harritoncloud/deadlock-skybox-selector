@@ -34,7 +34,8 @@ A polished one-file Windows application for changing the atmosphere of Deadlock 
 | Vanilla restore | **Restore** removes only the managed override and leaves unrelated addons untouched. |
 | Clean first run | Consent and loading screens prepare the local library without showing a console window. |
 | Optional FPS profile | A managed block is added to `autoexec.cfg`, preserving existing user settings. |
-| GameInfo component | Mounts `citadel/addons`, keeps client physics enabled, and creates a verified backup. |
+| GameInfo component | Mounts `citadel/addons`, keeps client physics enabled, and creates a verified original backup. |
+| Default GameInfo restore | The compact **Default GI** button restores the first verified backup and preserves the current file. |
 
 The window can be moved from any non-interactive surface, and the greeting automatically uses the current Windows account name.
 
@@ -46,6 +47,8 @@ The window can be moved from any non-interactive surface, and the greeting autom
 4. Approve the first-run library installation.
 5. Select a skybox card and press **Apply**.
 6. Press **Restore** whenever you want to return to the original Deadlock skybox.
+
+Use **Default GI** to restore the original `gameinfo.gi`. This button becomes available after the component has created its first verified backup.
 
 The verified library is stored in `<Deadlock>/dlskybox`. Older `deadlockcustomskybox` and `patchwin.cc-skyboxes` caches are migrated automatically.
 
