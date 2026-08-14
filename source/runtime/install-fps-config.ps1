@@ -22,6 +22,9 @@ function Assert-ChildPath([string]$Path, [string]$Root) {
 }
 
 function Normalize-Lines([string]$Text) {
+    if ($null -eq $Text) {
+        return ""
+    }
     return (($Text -replace "`r`n", "`n") -replace "`r", "`n").Trim()
 }
 
@@ -46,10 +49,12 @@ try {
         throw "The FPS profile is empty."
     }
 
-    $existing = if (Test-Path -LiteralPath $autoexec -PathType Leaf) {
-        Get-Content -LiteralPath $autoexec -Raw
-    } else {
-        ""
+    $existing = [string]::Empty
+    if (Test-Path -LiteralPath $autoexec -PathType Leaf) {
+        $existingContents = Get-Content -LiteralPath $autoexec -Raw
+        if ($null -ne $existingContents) {
+            $existing = [string]$existingContents
+        }
     }
     $pattern = "(?ms)^" + [regex]::Escape($markerStart) + ".*?^" + [regex]::Escape($markerEnd) + "\s*"
     $managedBlock = $markerStart + "`r`n" + ($profile -replace "`n", "`r`n") + "`r`n" + $markerEnd

@@ -1376,6 +1376,7 @@ internal sealed class SelectorForm : Form
 
         BuildInterface();
         BuildCards();
+        EnableWindowDragging(dashboard);
         entranceTimer = new Timer();
         entranceTimer.Interval = 15;
         entranceTimer.Tick += AnimateEntrance;
@@ -1402,7 +1403,6 @@ internal sealed class SelectorForm : Form
 
         titleBar = BuildTitleBar();
         dashboard.Controls.Add(titleBar);
-        dashboard.MouseDown += DragWindow;
 
         TableLayoutPanel shell = new TableLayoutPanel();
         shell.BackColor = Color.Transparent;
@@ -1463,7 +1463,6 @@ internal sealed class SelectorForm : Form
         bar.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         bar.Location = new Point(ClientSize.Width - 106, 0);
         bar.Size = new Size(96, 56);
-        bar.MouseDown += DragWindow;
 
         WindowButton close = new WindowButton();
         close.Kind = WindowButtonKind.Close;
@@ -1486,6 +1485,30 @@ internal sealed class SelectorForm : Form
         close.Location = new Point(bar.ClientSize.Width - close.Width - 13, 11);
         minimize.Location = new Point(close.Left - minimize.Width - 4, 11);
         return bar;
+    }
+
+    private void EnableWindowDragging(Control root)
+    {
+        if (root == null || IsInteractiveDragControl(root))
+            return;
+
+        // Keep the custom scrollbar interactive while allowing blank gallery space to drag.
+        if (!(root is SkyboxScrollHost))
+        {
+            root.MouseDown -= DragWindow;
+            root.MouseDown += DragWindow;
+        }
+
+        foreach (Control child in root.Controls)
+            EnableWindowDragging(child);
+    }
+
+    private static bool IsInteractiveDragControl(Control control)
+    {
+        return control is ActionButton ||
+            control is FilterButton ||
+            control is WindowButton ||
+            control is SkyboxCard;
     }
 
     private void DragWindow(object sender, MouseEventArgs e)
@@ -1695,7 +1718,10 @@ internal sealed class SelectorForm : Form
         user.Font = UiTheme.Font(21F, FontStyle.Bold);
         user.ForeColor = UiTheme.AccentHover;
         user.Location = new Point(title.Right, 2);
-        user.Text = "harriton!";
+        string windowsUser = Environment.UserName;
+        if (String.IsNullOrWhiteSpace(windowsUser))
+            windowsUser = "user";
+        user.Text = windowsUser.Trim() + "!";
         header.Controls.Add(user);
         title.SizeChanged += delegate
         {

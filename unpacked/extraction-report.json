@@ -1,9 +1,9 @@
 ﻿{
-    "extractedAtUtc":  "2026-08-14T00:28:08.9088360Z",
+    "extractedAtUtc":  "2026-08-14T07:50:48.3739727Z",
     "sourceExecutable":  {
                              "path":  "SkyboxSelector.exe",
-                             "bytes":  399842816,
-                             "sha256":  "d5ccea19f386e2f5f3061c6644f8c9266f3a0b1045617e7f39ae19467ee47d7a"
+                             "bytes":  399843328,
+                             "sha256":  "5bccc4e680b4b388096a209746f0bcd81595048e2228897497844e8ef10b21a5"
                          },
     "resources":  [
                       {
@@ -21,8 +21,8 @@
                       {
                           "resource":  "SkyboxSelector.Payload.install-fps-config.ps1",
                           "extractedTo":  "runtime/install-fps-config.ps1",
-                          "bytes":  3710,
-                          "sha256":  "143f8a095b4b571c4c3edfd709bb3c09b2ba1b9beefdf7a754300e64d87aecea"
+                          "bytes":  3880,
+                          "sha256":  "6568c339e9b8d9a1bce313b1eed8a472e97239c4689c76eff29cd8d6ff9154f4"
                       },
                       {
                           "resource":  "SkyboxSelector.Payload.deadlock-fps.cfg",
@@ -34,7 +34,7 @@
                           "resource":  "SkyboxSelector.Payload.DeadlockGameInfoInstaller.exe",
                           "extractedTo":  "runtime/DeadlockGameInfoInstaller.exe",
                           "bytes":  99840,
-                          "sha256":  "52b3d304cee3ff0ccd7caef2186ba14f5679f632734b3efad22c3579f5610c22"
+                          "sha256":  "91883f99e08f995c389fd3e2939e566756304bc81a3de7d4cfd6c3ac08ee820c"
                       },
                       {
                           "resource":  "SkyboxSelector.Payload.7z.exe",
@@ -64,7 +64,7 @@
                           "resource":  "SkyboxSelector.Payload.runtime-checksums.sha256",
                           "extractedTo":  "runtime/runtime-checksums.sha256",
                           "bytes":  755,
-                          "sha256":  "73258c59e2e776b0cde27d6704890013e212873507e8e51b7cb6ed2db9404b0a"
+                          "sha256":  "3c8cf9150dd09d0e8648a22ec2ae77ec5ea97a964c545e76946c1e9ea2252159"
                       },
                       {
                           "resource":  "SkyboxSelector.Payload.skyboxes.7z",
@@ -75,7 +75,7 @@
                   ],
     "extracted":  {
                       "files":  78,
-                      "bytes":  955800229,
+                      "bytes":  955800399,
                       "vpkFiles":  32
                   }
 }
