@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("status", "select", "validate-cache", "veil-hide", "veil-show", "smoke-hide", "smoke-show", "names-hide", "names-show", "book-hide", "book-show", "markers-hide", "markers-show", "lines-hide", "lines-show", "fill-hide", "fill-show", "colorfix-on", "colorfix-off")]
+    [ValidateSet("status", "select", "validate-cache", "veil-hide", "veil-show", "smoke-hide", "smoke-show", "names-hide", "names-show", "book-hide", "book-show", "markers-hide", "markers-show", "graves-hide", "graves-show", "lines-hide", "lines-show", "fill-hide", "fill-show", "colorfix-on", "colorfix-off")]
     [string]$Action = "select",
     [string]$Selection = "",
     [string]$DeadlockRoot = $(if ($env:DEADLOCK_ROOT) { $env:DEADLOCK_ROOT } else { "C:\Program Files (x86)\Steam\steamapps\common\Deadlock" }),
@@ -251,6 +251,17 @@ try {
             (Get-Sha256 $markersPath) -ne ([string]$markers.sha256).ToUpperInvariant()) {
             throw "The cached player-marker override failed verification."
         }
+        foreach ($gravesVariant in @($manifest.hideGravesMarkersOverride, $manifest.hideCombinedMarkersOverride)) {
+            if (-not $gravesVariant -or ([string]$gravesVariant.sha256).ToUpperInvariant() -notmatch '^[0-9A-F]{64}$') {
+                throw "The Graves-marker override metadata is invalid."
+            }
+            $gravesPath = Resolve-CacheEntry ([string]$gravesVariant.entry) $CacheRoot
+            if (-not (Test-Path -LiteralPath $gravesPath -PathType Leaf) -or
+                (Get-Item -LiteralPath $gravesPath).Length -ne [long]$gravesVariant.bytes -or
+                (Get-Sha256 $gravesPath) -ne ([string]$gravesVariant.sha256).ToUpperInvariant()) {
+                throw "The cached Graves-marker override failed verification."
+            }
+        }
         $healthLines = $manifest.hideHealthLinesOverride
         if (-not $healthLines -or ([string]$healthLines.sha256).ToUpperInvariant() -notmatch '^[0-9A-F]{64}$') {
             throw "The health-line override metadata is invalid."
@@ -281,7 +292,7 @@ try {
             (Get-Sha256 $colorFixPath) -ne ([string]$colorFix.sha256).ToUpperInvariant()) {
             throw "The cached ColorFix override failed verification."
         }
-        Write-Host "Cache verification passed: 32 skyboxes and 8 visual overrides." -ForegroundColor Green
+        Write-Host "Cache verification passed: 32 skyboxes and 9 visual fixes." -ForegroundColor Green
         exit 0
     }
 
@@ -371,21 +382,68 @@ try {
         exit 0
     }
 
-    if ($Action -in @("veil-hide", "veil-show", "smoke-hide", "smoke-show", "names-hide", "names-show", "book-hide", "book-show", "markers-hide", "markers-show", "lines-hide", "lines-show", "fill-hide", "fill-show", "colorfix-on", "colorfix-off")) {
+    if ($Action -in @("markers-hide", "markers-show", "graves-hide", "graves-show")) {
+        if (-not $addonsMounted) {
+            throw "gameinfo.gi does not mount citadel/addons. Run the GameInfo installer first."
+        }
+        $target = Join-Path $addonsRoot "pak07_dir.vpk"
+        Assert-ChildPath $target $addonsRoot "the Deadlock addons directory"
+        Wait-ForManagedProcesses $DeadlockRoot $WaitTimeoutSeconds
+        $playerHash = ([string]$manifest.hidePlayerMarkersOverride.sha256).ToUpperInvariant()
+        $gravesHash = ([string]$manifest.hideGravesMarkersOverride.sha256).ToUpperInvariant()
+        $combinedHash = ([string]$manifest.hideCombinedMarkersOverride.sha256).ToUpperInvariant()
+        $installedHash = if (Test-Path -LiteralPath $target -PathType Leaf) { Get-Sha256 $target } else { "" }
+        if ($installedHash -and $installedHash -notin @($playerHash, $gravesHash, $combinedHash)) {
+            throw "pak07_dir.vpk belongs to another mod. Refusing to overwrite or remove it."
+        }
+        $hidePlayers = $installedHash -in @($playerHash, $combinedHash)
+        $hideGraves = $installedHash -in @($gravesHash, $combinedHash)
+        if ($Action.StartsWith("markers-", [StringComparison]::Ordinal)) {
+            $hidePlayers = $Action -eq "markers-hide"
+        } else {
+            $hideGraves = $Action -eq "graves-hide"
+        }
+        $desired = if ($hidePlayers -and $hideGraves) { $manifest.hideCombinedMarkersOverride } elseif ($hidePlayers) { $manifest.hidePlayerMarkersOverride } elseif ($hideGraves) { $manifest.hideGravesMarkersOverride } else { $null }
+        $desiredHash = if ($desired) { ([string]$desired.sha256).ToUpperInvariant() } else { "" }
+        if ($installedHash -eq $desiredHash) {
+            Write-Host "Marker settings are already applied." -ForegroundColor Green
+            exit 0
+        }
+        if (Test-Path -LiteralPath ($target + ".patchwin-new")) {
+            throw "A temporary pak07_dir.vpk already exists; refusing to replace it."
+        }
+        New-Item -ItemType Directory -Path $addonsRoot -Force | Out-Null
+        if ($installedHash) {
+            $backupPath = Join-Path $BackupRoot ("markers-" + (Get-Date -Format "yyyyMMdd-HHmmss-fff"))
+            New-Item -ItemType Directory -Path $backupPath -Force | Out-Null
+            $backupFile = Join-Path $backupPath "pak07_dir.vpk"
+            Copy-Item -LiteralPath $target -Destination $backupFile
+            if ((Get-Sha256 $backupFile) -ne $installedHash) { throw "Marker backup failed verification." }
+        }
+        if ($desired) {
+            $source = Resolve-CacheEntry ([string]$desired.entry) $CacheRoot
+            Copy-VerifiedVariant $source $target ([long]$desired.bytes) $desiredHash
+        } else {
+            Remove-Item -LiteralPath $target -Force
+        }
+        Write-Host "Marker settings applied. Restart Deadlock to see the change." -ForegroundColor Green
+        exit 0
+    }
+
+    if ($Action -in @("veil-hide", "veil-show", "smoke-hide", "smoke-show", "names-hide", "names-show", "book-hide", "book-show", "lines-hide", "lines-show", "fill-hide", "fill-show", "colorfix-on", "colorfix-off")) {
         if (-not $addonsMounted) {
             throw "gameinfo.gi does not mount citadel/addons. Run the GameInfo installer first."
         }
         $isSmoke = $Action.StartsWith("smoke-", [StringComparison]::Ordinal)
         $isNames = $Action.StartsWith("names-", [StringComparison]::Ordinal)
         $isBook = $Action.StartsWith("book-", [StringComparison]::Ordinal)
-        $isMarkers = $Action.StartsWith("markers-", [StringComparison]::Ordinal)
         $isLines = $Action.StartsWith("lines-", [StringComparison]::Ordinal)
         $isFill = $Action.StartsWith("fill-", [StringComparison]::Ordinal)
         $isColorFix = $Action.StartsWith("colorfix-", [StringComparison]::Ordinal)
-        $effectName = if ($isColorFix) { "ColorFix" } elseif ($isFill) { "Modern ability fill" } elseif ($isLines) { "HP-bar lines" } elseif ($isMarkers) { "Player markers" } elseif ($isBook) { "Pickup book" } elseif ($isNames) { "Unit names" } elseif ($isSmoke) { "Factory smoke" } else { "Base veil" }
-        $override = if ($isColorFix) { $manifest.colorFixOverride } elseif ($isFill) { $manifest.classicAbilityFillOverride } elseif ($isLines) { $manifest.hideHealthLinesOverride } elseif ($isMarkers) { $manifest.hidePlayerMarkersOverride } elseif ($isBook) { $manifest.hidePickupBookOverride } elseif ($isNames) { $manifest.hideNamesOverride } elseif ($isSmoke) { $manifest.factorySmokeOverride } else { $manifest.baseVeilOverride }
-        $targetName = if ($isColorFix) { "pak10_dir.vpk" } elseif ($isFill) { "pak09_dir.vpk" } elseif ($isLines) { "pak08_dir.vpk" } elseif ($isMarkers) { "pak07_dir.vpk" } elseif ($isBook) { "pak06_dir.vpk" } elseif ($isNames) { "pak05_dir.vpk" } elseif ($isSmoke) { "pak04_dir.vpk" } else { "pak03_dir.vpk" }
-        $backupPrefix = if ($isColorFix) { "colorfix-" } elseif ($isFill) { "ability-fill-" } elseif ($isLines) { "hp-bar-lines-" } elseif ($isMarkers) { "player-markers-" } elseif ($isBook) { "pickup-book-" } elseif ($isNames) { "unit-names-" } elseif ($isSmoke) { "factory-smoke-" } else { "base-veil-" }
+        $effectName = if ($isColorFix) { "ColorFix" } elseif ($isFill) { "Modern ability fill" } elseif ($isLines) { "HP-bar lines" } elseif ($isBook) { "Pickup book" } elseif ($isNames) { "Unit names" } elseif ($isSmoke) { "Factory smoke" } else { "Base veil" }
+        $override = if ($isColorFix) { $manifest.colorFixOverride } elseif ($isFill) { $manifest.classicAbilityFillOverride } elseif ($isLines) { $manifest.hideHealthLinesOverride } elseif ($isBook) { $manifest.hidePickupBookOverride } elseif ($isNames) { $manifest.hideNamesOverride } elseif ($isSmoke) { $manifest.factorySmokeOverride } else { $manifest.baseVeilOverride }
+        $targetName = if ($isColorFix) { "pak10_dir.vpk" } elseif ($isFill) { "pak09_dir.vpk" } elseif ($isLines) { "pak08_dir.vpk" } elseif ($isBook) { "pak06_dir.vpk" } elseif ($isNames) { "pak05_dir.vpk" } elseif ($isSmoke) { "pak04_dir.vpk" } else { "pak03_dir.vpk" }
+        $backupPrefix = if ($isColorFix) { "colorfix-" } elseif ($isFill) { "ability-fill-" } elseif ($isLines) { "hp-bar-lines-" } elseif ($isBook) { "pickup-book-" } elseif ($isNames) { "unit-names-" } elseif ($isSmoke) { "factory-smoke-" } else { "base-veil-" }
         if (-not $override) { throw "The skybox cache has no $effectName override." }
         $overrideBytes = [long]$override.bytes
         $overrideHash = ([string]$override.sha256).ToUpperInvariant()
@@ -401,7 +459,10 @@ try {
         $installedHash = if ($overrideInstalled) { Get-Sha256 $overrideTarget } else { "" }
         $legacyFillHashes = @(
             'AA69FCB3F9E488654D66DD6C6D3B501109106377A12D03B74F6C2B4C65F185CB',
-            'BC31A1C4A901759671E6D13E10A0DCF3C806326110B42BC4F738C6B736F4DB3C'
+            'BC31A1C4A901759671E6D13E10A0DCF3C806326110B42BC4F738C6B736F4DB3C',
+            'C2732D4F9DF4E8899A3EB3BC220686BC9F43513191BBC640B80B3045F2257C25',
+            '56A6BA1858D3DFCDE0FC3DF67298831663BD4A1BA3AF864EFCC9614029079C7B',
+            '860E312D79820B322BA6A6F4914E333794211A3B87279F7822F379578BCCAC91'
         )
         $legacyFillInstalled = $isFill -and $installedHash -in $legacyFillHashes
         if ($overrideInstalled -and $installedHash -ne $overrideHash -and -not $legacyFillInstalled) {

@@ -37,6 +37,16 @@
                                        "bytes":  9459,
                                        "sha256":  "eb976e9c9c5540fef04a628c722563e828bba589b964aaeac2c1525ad0ed8f1c"
                                    },
+    "hideGravesMarkersOverride":  {
+                                        "entry":  "overrides/hide-graves-markers_dir.vpk",
+                                        "bytes":  9459,
+                                        "sha256":  "b27f9f9a0822ef543d118af0c9051540361c7649686da75e08981bf886b64565"
+                                    },
+    "hideCombinedMarkersOverride":  {
+                                          "entry":  "overrides/hide-combined-markers_dir.vpk",
+                                          "bytes":  9459,
+                                          "sha256":  "ef84f6215ed28010c319c0ab66cfda7dbb2d9769bf15b5497d7917834fa80366"
+                                      },
     "hideHealthLinesOverride":  {
                                      "entry":  "overrides/hide-health-lines_dir.vpk",
                                      "bytes":  24801,
@@ -44,8 +54,8 @@
                                  },
     "classicAbilityFillOverride":  {
                                           "entry":  "overrides/classic-ability-fill_dir.vpk",
-                                          "bytes":  168904,
-                                          "sha256":  "c2732d4f9df4e8899a3eb3bc220686bc9f43513191bbc640b80b3045f2257c25"
+                                          "bytes":  243929,
+                                          "sha256":  "d2a777225a0c4409157beb308622429bbdfc3b861b2c8150e07b1681c58953e7"
                                       },
     "colorFixOverride":  {
                               "entry":  "overrides/low-contrast_dir.vpk",

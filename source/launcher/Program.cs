@@ -66,6 +66,8 @@ internal static class Program
         public AssetOverride hideNamesOverride { get; set; }
         public AssetOverride hidePickupBookOverride { get; set; }
         public AssetOverride hidePlayerMarkersOverride { get; set; }
+        public AssetOverride hideGravesMarkersOverride { get; set; }
+        public AssetOverride hideCombinedMarkersOverride { get; set; }
         public AssetOverride hideHealthLinesOverride { get; set; }
         public AssetOverride classicAbilityFillOverride { get; set; }
         public AssetOverride colorFixOverride { get; set; }
@@ -765,6 +767,18 @@ internal static class Program
             throw new InvalidDataException("Player-marker override is missing or has an invalid size.");
         if (verifyFiles && !String.Equals(ComputeSha256(markersPath), markers.sha256, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Player-marker override failed SHA-256 verification.");
+
+        foreach (AssetOverride gravesVariant in new[] { manifest.hideGravesMarkersOverride, manifest.hideCombinedMarkersOverride })
+        {
+            if (gravesVariant == null || !Regex.IsMatch(gravesVariant.sha256 ?? "", "^[0-9a-fA-F]{64}$") || gravesVariant.bytes <= 0)
+                throw new InvalidDataException("Graves-marker override metadata is missing or invalid.");
+            string gravesPath = ResolveSafeCacheEntry(cacheRoot, gravesVariant.entry);
+            if (!File.Exists(gravesPath) || (File.GetAttributes(gravesPath) & FileAttributes.ReparsePoint) != 0 ||
+                new FileInfo(gravesPath).Length != gravesVariant.bytes)
+                throw new InvalidDataException("Graves-marker override is missing or has an invalid size.");
+            if (verifyFiles && !String.Equals(ComputeSha256(gravesPath), gravesVariant.sha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Graves-marker override failed SHA-256 verification.");
+        }
 
         AssetOverride healthLines = manifest.hideHealthLinesOverride;
         if (healthLines == null || !Regex.IsMatch(healthLines.sha256 ?? "", "^[0-9a-fA-F]{64}$") || healthLines.bytes <= 0)

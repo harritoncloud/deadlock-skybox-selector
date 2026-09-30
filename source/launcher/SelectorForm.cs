@@ -1935,6 +1935,8 @@ internal sealed class SkyboxManifest
     public SkyboxOverride hideNamesOverride { get; set; }
     public SkyboxOverride hidePickupBookOverride { get; set; }
     public SkyboxOverride hidePlayerMarkersOverride { get; set; }
+    public SkyboxOverride hideGravesMarkersOverride { get; set; }
+    public SkyboxOverride hideCombinedMarkersOverride { get; set; }
     public SkyboxOverride hideHealthLinesOverride { get; set; }
     public SkyboxOverride classicAbilityFillOverride { get; set; }
     public SkyboxOverride colorFixOverride { get; set; }
@@ -2017,6 +2019,7 @@ internal sealed class SelectorStatus
     public bool BookHidden;
     public bool BookSlotOccupied;
     public bool PlayerMarkersHidden;
+    public bool GravesMarkersHidden;
     public bool PlayerMarkersSlotOccupied;
     public bool HealthLinesHidden;
     public bool HealthLinesSlotOccupied;
@@ -2122,6 +2125,7 @@ internal sealed class SelectorForm : Form
     private FixToggle namesSwitch;
     private FixToggle bookSwitch;
     private FixToggle playerMarkersSwitch;
+    private FixToggle gravesMarkersSwitch;
     private FixToggle healthLinesSwitch;
     private FixToggle classicFillSwitch;
     private FixToggle colorFixSwitch;
@@ -2130,6 +2134,7 @@ internal sealed class SelectorForm : Form
     private Label namesStateLabel;
     private Label bookStateLabel;
     private Label playerMarkersStateLabel;
+    private Label gravesMarkersStateLabel;
     private Label healthLinesStateLabel;
     private Label classicFillStateLabel;
     private Label colorFixStateLabel;
@@ -2158,8 +2163,11 @@ internal sealed class SelectorForm : Form
     private bool bookSlotOccupied;
     private string hidePickupBookOverrideHash = "";
     private bool playerMarkersHidden;
+    private bool gravesMarkersHidden;
     private bool playerMarkersSlotOccupied;
     private string hidePlayerMarkersOverrideHash = "";
+    private string hideGravesMarkersOverrideHash = "";
+    private string hideCombinedMarkersOverrideHash = "";
     private bool healthLinesHidden;
     private bool healthLinesSlotOccupied;
     private string hideHealthLinesOverrideHash = "";
@@ -2849,88 +2857,144 @@ internal sealed class SelectorForm : Form
     {
         TableLayoutPanel page = BuildPage("Fixes", "Close Deadlock before switching. Changes appear on the next launch.", 0);
         RoundedPanel card = BuildCard();
+        TableLayoutPanel rows = new TableLayoutPanel();
+        rows.BackColor = Color.Transparent;
+        rows.Dock = DockStyle.Fill;
+        rows.Margin = Padding.Empty;
+        rows.Padding = new Padding(Gutter, 8, Gutter, 8);
+        rows.ColumnCount = 1;
+        rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        rows.RowCount = 9;
+        rows.GrowStyle = TableLayoutPanelGrowStyle.FixedSize;
+        for (int i = 0; i < rows.RowCount; i++)
+            rows.RowStyles.Add(new RowStyle(SizeType.Percent, 100F / rows.RowCount));
 
         veilSwitch = new FixToggle();
         veilStateLabel = BuildStateLabel(0, "Checking");
-        AddFixRow(card, 18, "BASE VEIL", "Team-colored clouds above the bases.", veilSwitch, veilStateLabel);
+        AddFixRow(rows, 0, "BASE VEIL", "Team-colored clouds above the bases.", veilSwitch, veilStateLabel);
         veilSwitch.Click += delegate { ToggleBaseVeil(); };
 
         smokeSwitch = new FixToggle();
         smokeStateLabel = BuildStateLabel(0, "Checking");
-        AddFixRow(card, 84, "FACTORY SMOKE", "The large dark cloud above the factory.", smokeSwitch, smokeStateLabel);
+        AddFixRow(rows, 1, "FACTORY SMOKE", "The large dark cloud above the factory.", smokeSwitch, smokeStateLabel);
         smokeSwitch.Click += delegate { ToggleFactorySmoke(); };
 
         namesSwitch = new FixToggle();
         namesStateLabel = BuildStateLabel(0, "Checking");
-        AddFixRow(card, 150, "UNIT NAMES", "Floating labels over heroes and other units.", namesSwitch, namesStateLabel);
+        AddFixRow(rows, 2, "UNIT NAMES", "Floating labels over heroes and other units.", namesSwitch, namesStateLabel);
         namesSwitch.Click += delegate { ToggleNames(); };
 
         bookSwitch = new FixToggle();
         bookStateLabel = BuildStateLabel(0, "Checking");
-        AddFixRow(card, 216, "PICKUP BOOK", "The brief floating model after collecting a bonus.", bookSwitch, bookStateLabel);
+        AddFixRow(rows, 3, "PICKUP BOOK", "The brief floating model after collecting a bonus.", bookSwitch, bookStateLabel);
         bookSwitch.Click += delegate { TogglePickupBook(); };
 
         playerMarkersSwitch = new FixToggle();
         playerMarkersStateLabel = BuildStateLabel(0, "Checking");
-        AddFixRow(card, 282, "PLAYER MARKERS", "Player name, portrait and distance in the world.", playerMarkersSwitch, playerMarkersStateLabel);
+        AddFixRow(rows, 4, "PLAYER MARKERS", "Player name, portrait and distance in the world.", playerMarkersSwitch, playerMarkersStateLabel);
         playerMarkersSwitch.Click += delegate { TogglePlayerMarkers(); };
+
+        gravesMarkersSwitch = new FixToggle();
+        gravesMarkersStateLabel = BuildStateLabel(0, "Checking");
+        AddFixRow(rows, 5, "GRAVES MARKERS", "Distance icons for Graves' zombies and ultimate.", gravesMarkersSwitch, gravesMarkersStateLabel);
+        gravesMarkersSwitch.Click += delegate { ToggleGravesMarkers(); };
 
         healthLinesSwitch = new FixToggle();
         healthLinesStateLabel = BuildStateLabel(0, "Checking");
-        AddFixRow(card, 348, "HP BAR LINES", "Horizontal tick marks inside your health bar.", healthLinesSwitch, healthLinesStateLabel);
+        AddFixRow(rows, 6, "HP BAR LINES", "Horizontal tick marks inside your health bar.", healthLinesSwitch, healthLinesStateLabel);
         healthLinesSwitch.Click += delegate { ToggleHealthLines(); };
 
         classicFillSwitch = new FixToggle();
         classicFillStateLabel = BuildStateLabel(0, "Checking");
-        AddFixRow(card, 414, "CLASSIC ABILITY FILL", "Purple fill for purchased ability upgrades.", classicFillSwitch, classicFillStateLabel);
+        AddFixRow(rows, 7, "CLASSIC ABILITY FILL", "Purple upgrades with bright amber build recommendations.", classicFillSwitch, classicFillStateLabel);
         classicFillSwitch.Click += delegate { ToggleClassicFill(); };
 
         colorFixSwitch = new FixToggle();
         colorFixStateLabel = BuildStateLabel(0, "Checking");
-        AddFixRow(card, 480, "COLORFIX", "Softer scene contrast, without changing the HUD.", colorFixSwitch, colorFixStateLabel);
+        AddFixRow(rows, 8, "COLORFIX", "Softer scene contrast, without changing the HUD.", colorFixSwitch, colorFixStateLabel);
         colorFixSwitch.Click += delegate { ToggleColorFix(); };
 
+        card.Controls.Add(rows);
         page.Controls.Add(card, 0, 1);
         return page;
     }
 
-    private static void AddFixRow(RoundedPanel card, int top, string title, string description,
+    private static void AddFixRow(TableLayoutPanel rows, int index, string title, string description,
         FixToggle toggle, Label state)
     {
-        card.Controls.Add(BuildCardHeading(title, top));
-        card.Controls.Add(BuildCardBody(description, top + 23, 680));
-        state.Location = new Point(Gutter - TextInset(state.Font), top + 47);
-        card.Controls.Add(state);
+        Panel row = new Panel();
+        row.BackColor = Color.Transparent;
+        row.Dock = DockStyle.Fill;
+        row.Margin = Padding.Empty;
 
-        toggle.Size = new Size(68, 34);
+        Label heading = BuildCardHeading(title, 0);
+        heading.AutoSize = false;
+        heading.Location = new Point(0, 6);
+        heading.Height = 19;
+        heading.AutoEllipsis = true;
+        row.Controls.Add(heading);
+
+        Label detail = new Label();
+        detail.AutoSize = false;
+        detail.AutoEllipsis = true;
+        detail.BackColor = Color.Transparent;
+        detail.Font = new Font("Segoe UI", Math.Max(6F, 9F * UiScale.FontFactor), FontStyle.Regular);
+        detail.ForeColor = UiTheme.Mix(UiTheme.Text, UiTheme.TextMuted, 0.38F);
+        detail.Location = new Point(0, 26);
+        detail.Height = 20;
+        detail.Text = description;
+        row.Controls.Add(detail);
+
+        state.AutoSize = false;
+        state.AutoEllipsis = true;
+        state.Font = new Font("Segoe UI", Math.Max(6F, 9F * UiScale.FontFactor), FontStyle.Bold);
+        state.Size = new Size(245, 24);
+        state.TextAlign = ContentAlignment.MiddleRight;
+        row.Controls.Add(state);
+
+        toggle.Size = new Size(62, 32);
         toggle.AccessibleName = title;
-        toggle.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        toggle.Location = new Point(798, top + 28);
-        card.Controls.Add(toggle);
-        card.Resize += delegate { toggle.Left = card.ClientSize.Width - Gutter - toggle.Width; };
+        row.Controls.Add(toggle);
 
-        if (top < 480)
+        Panel line = null;
+        if (index < rows.RowCount - 1)
         {
-            Panel line = new Panel();
-            line.BackColor = UiTheme.BorderSoft;
-            line.Location = new Point(Gutter, top + 65);
-            line.Size = new Size(680, 1);
-            card.Controls.Add(line);
+            line = new Panel();
+            line.BackColor = UiTheme.Mix(UiTheme.BorderSoft, Color.FromArgb(24, 34, 32), 0.3F);
+            line.Height = 1;
+            row.Controls.Add(line);
         }
+
+        row.Resize += delegate
+        {
+            int toggleLeft = row.ClientSize.Width - toggle.Width;
+            toggle.Location = new Point(toggleLeft, Math.Max(0, (row.ClientSize.Height - toggle.Height) / 2));
+            state.Location = new Point(toggleLeft - state.Width - 16,
+                Math.Max(0, (row.ClientSize.Height - state.Height) / 2));
+            int copyWidth = Math.Max(100, state.Left - 24);
+            heading.Width = copyWidth;
+            detail.Width = copyWidth;
+            if (line != null)
+            {
+                line.Location = new Point(0, Math.Max(0, row.ClientSize.Height - 1));
+                line.Width = row.ClientSize.Width;
+            }
+        };
+        rows.Controls.Add(row, 0, index);
     }
 
     private Panel BuildGameInfoPage()
     {
         TableLayoutPanel page = BuildPage(
             "GameInfo",
-            "Your current game configuration, saved in this build.",
+            "Your saved game configuration, ready to apply.",
             0);
 
         RoundedPanel card = BuildCard();
         card.Controls.Add(BuildCardHeading("SAVED CONFIG", 26));
         Label summary = BuildCardBody(
-            "The exact gameinfo.gi saved from this PC. Reapply it whenever you want; " +
-            "the current game file is backed up first.",
+            "Maxfps v1.0 with your texture and aspect-ratio settings. In-world pickup panels use " +
+            "the game's default resolution. Physics is off; applying backs up the current file.",
             53, 690);
         card.Controls.Add(summary);
 
@@ -2941,7 +3005,7 @@ internal sealed class SelectorForm : Form
         installButton.Tone = ActionButtonTone.Install;
         installButton.Click += delegate { InstallComponent(); };
         card.Controls.Add(installButton);
-        card.Controls.Add(BuildCardBody("Snapshot 78695F98DC3F  -  30 Sep 2026", installButton.Bottom + 20, 690));
+        card.Controls.Add(BuildCardBody("Snapshot CE91F9C6A1CC  -  30 Sep 2026", installButton.Bottom + 20, 690));
 
         page.Controls.Add(card, 0, 1);
         return page;
@@ -3265,6 +3329,12 @@ internal sealed class SelectorForm : Form
         if (manifest.hidePlayerMarkersOverride != null &&
             Regex.IsMatch(manifest.hidePlayerMarkersOverride.sha256 ?? "", "^[0-9a-fA-F]{64}$"))
             hidePlayerMarkersOverrideHash = manifest.hidePlayerMarkersOverride.sha256;
+        if (manifest.hideGravesMarkersOverride != null &&
+            Regex.IsMatch(manifest.hideGravesMarkersOverride.sha256 ?? "", "^[0-9a-fA-F]{64}$"))
+            hideGravesMarkersOverrideHash = manifest.hideGravesMarkersOverride.sha256;
+        if (manifest.hideCombinedMarkersOverride != null &&
+            Regex.IsMatch(manifest.hideCombinedMarkersOverride.sha256 ?? "", "^[0-9a-fA-F]{64}$"))
+            hideCombinedMarkersOverrideHash = manifest.hideCombinedMarkersOverride.sha256;
         if (manifest.hideHealthLinesOverride != null &&
             Regex.IsMatch(manifest.hideHealthLinesOverride.sha256 ?? "", "^[0-9a-fA-F]{64}$"))
             hideHealthLinesOverrideHash = manifest.hideHealthLinesOverride.sha256;
@@ -3560,9 +3630,12 @@ internal sealed class SelectorForm : Form
         if (File.Exists(playerMarkersTarget))
         {
             string markerHash = ComputeFileSha256(playerMarkersTarget);
-            status.PlayerMarkersHidden = String.Equals(
-                markerHash, hidePlayerMarkersOverrideHash, StringComparison.OrdinalIgnoreCase);
-            status.PlayerMarkersSlotOccupied = !status.PlayerMarkersHidden;
+            bool playerOnly = String.Equals(markerHash, hidePlayerMarkersOverrideHash, StringComparison.OrdinalIgnoreCase);
+            bool gravesOnly = String.Equals(markerHash, hideGravesMarkersOverrideHash, StringComparison.OrdinalIgnoreCase);
+            bool combined = String.Equals(markerHash, hideCombinedMarkersOverrideHash, StringComparison.OrdinalIgnoreCase);
+            status.PlayerMarkersHidden = playerOnly || combined;
+            status.GravesMarkersHidden = gravesOnly || combined;
+            status.PlayerMarkersSlotOccupied = !playerOnly && !gravesOnly && !combined;
         }
 
         if (File.Exists(healthLinesTarget))
@@ -3582,6 +3655,12 @@ internal sealed class SelectorForm : Form
                 fillHash, "AA69FCB3F9E488654D66DD6C6D3B501109106377A12D03B74F6C2B4C65F185CB",
                 StringComparison.OrdinalIgnoreCase) || String.Equals(
                 fillHash, "BC31A1C4A901759671E6D13E10A0DCF3C806326110B42BC4F738C6B736F4DB3C",
+                StringComparison.OrdinalIgnoreCase) || String.Equals(
+                fillHash, "C2732D4F9DF4E8899A3EB3BC220686BC9F43513191BBC640B80B3045F2257C25",
+                StringComparison.OrdinalIgnoreCase) || String.Equals(
+                fillHash, "56A6BA1858D3DFCDE0FC3DF67298831663BD4A1BA3AF864EFCC9614029079C7B",
+                StringComparison.OrdinalIgnoreCase) || String.Equals(
+                fillHash, "860E312D79820B322BA6A6F4914E333794211A3B87279F7822F379578BCCAC91",
                 StringComparison.OrdinalIgnoreCase);
             status.ClassicFillSlotOccupied = !status.ClassicFillEnabled && !status.ClassicFillNeedsUpdate;
         }
@@ -3759,6 +3838,7 @@ internal sealed class SelectorForm : Form
         bookHidden = status.BookHidden;
         bookSlotOccupied = status.BookSlotOccupied;
         playerMarkersHidden = status.PlayerMarkersHidden;
+        gravesMarkersHidden = status.GravesMarkersHidden;
         playerMarkersSlotOccupied = status.PlayerMarkersSlotOccupied;
         healthLinesHidden = status.HealthLinesHidden;
         healthLinesSlotOccupied = status.HealthLinesSlotOccupied;
@@ -3777,6 +3857,8 @@ internal sealed class SelectorForm : Form
             bookSwitch.IsOn = bookHidden;
         if (playerMarkersSwitch != null)
             playerMarkersSwitch.IsOn = playerMarkersHidden;
+        if (gravesMarkersSwitch != null)
+            gravesMarkersSwitch.IsOn = gravesMarkersHidden;
         if (healthLinesSwitch != null)
             healthLinesSwitch.IsOn = healthLinesHidden;
         if (classicFillSwitch != null)
@@ -3788,6 +3870,7 @@ internal sealed class SelectorForm : Form
         SetFixState(namesStateLabel, namesHidden, namesSlotOccupied, "pak05_dir.vpk");
         SetFixState(bookStateLabel, bookHidden, bookSlotOccupied, "pak06_dir.vpk");
         SetFixState(playerMarkersStateLabel, playerMarkersHidden, playerMarkersSlotOccupied, "pak07_dir.vpk");
+        SetFixState(gravesMarkersStateLabel, gravesMarkersHidden, playerMarkersSlotOccupied, "pak07_dir.vpk");
         SetFixState(healthLinesStateLabel, healthLinesHidden, healthLinesSlotOccupied, "pak08_dir.vpk");
         if (classicFillStateLabel != null)
         {
@@ -4077,6 +4160,22 @@ internal sealed class SelectorForm : Form
             delegate { RefreshStatusAsync(); });
     }
 
+    private void ToggleGravesMarkers()
+    {
+        if (IsManagedProcessRunning())
+        {
+            MessageBox.Show("Close Deadlock and Deadlock Mod Manager before changing Graves markers.",
+                "Deadlock is running", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        string action = gravesMarkersHidden ? "graves-show" : "graves-hide";
+        RunOperation(
+            gravesMarkersHidden ? "Restoring Graves markers" : "Hiding Graves markers",
+            delegate { return RunSelector(action, ""); },
+            delegate { RefreshStatusAsync(); });
+    }
+
     private void ToggleHealthLines()
     {
         if (IsManagedProcessRunning())
@@ -4269,7 +4368,12 @@ internal sealed class SelectorForm : Form
                 !String.IsNullOrWhiteSpace(hidePickupBookOverrideHash);
         if (playerMarkersSwitch != null)
             playerMarkersSwitch.Enabled = !working && addonsMounted && !playerMarkersSlotOccupied &&
-                !String.IsNullOrWhiteSpace(hidePlayerMarkersOverrideHash);
+                !String.IsNullOrWhiteSpace(hidePlayerMarkersOverrideHash) &&
+                !String.IsNullOrWhiteSpace(hideCombinedMarkersOverrideHash);
+        if (gravesMarkersSwitch != null)
+            gravesMarkersSwitch.Enabled = !working && addonsMounted && !playerMarkersSlotOccupied &&
+                !String.IsNullOrWhiteSpace(hideGravesMarkersOverrideHash) &&
+                !String.IsNullOrWhiteSpace(hideCombinedMarkersOverrideHash);
         if (healthLinesSwitch != null)
             healthLinesSwitch.Enabled = !working && addonsMounted && !healthLinesSlotOccupied &&
                 !String.IsNullOrWhiteSpace(hideHealthLinesOverrideHash);

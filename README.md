@@ -2,9 +2,9 @@
 
 # Deadlock Skybox Selector
 
-### 32 skies. One clean selector.
+### 32 skies. Nine visual fixes. One Windows app.
 
-A polished one-file Windows application for changing the atmosphere of Deadlock safely and restoring Vanilla at any time.
+A one-file selector for Deadlock skyboxes, optional visual fixes, and a saved GameInfo preset. Switch skies in the app; return to the vanilla skybox whenever you want.
 
 <p>
   <img src="https://img.shields.io/badge/SKYBOXES-32-D99A4E?style=for-the-badge" alt="32 skyboxes">
@@ -17,24 +17,25 @@ A polished one-file Windows application for changing the atmosphere of Deadlock 
 
 <br>
 
-[**Download the latest release**](https://github.com/harritoncloud/deadlock-skybox-selector/releases/latest) &middot; [View all skyboxes](#skybox-library) &middot; [Read the safety model](#safety-model)
+[**Download for Windows**](https://github.com/harritoncloud/deadlock-skybox-selector/releases/latest) &middot; [What's new in 1.2](#whats-new-in-12) &middot; [Browse the skies](#skybox-library)
 
 </div>
 
 ---
 
-## Highlights
+## What's new in 1.2
 
-| Feature | Behavior |
+The selector now brings the skyboxes and the visual tweaks together in one place:
+
+| Area | Update |
 | --- | --- |
-| Native fixed-size GUI | Custom Deadlock-inspired interface with animated cards and high-refresh smooth scrolling. |
-| 32 named skyboxes | Every card uses its current atmosphere name and a matching preview. |
-| In-place switching | **Apply** changes the selected skybox without restarting the application. |
-| Safe override | Unknown skybox mods are verified, backed up, and then replaced transactionally. |
-| Vanilla restore | **Restore** removes only the managed override and leaves unrelated addons untouched. |
-| Eight visual fixes | A dedicated **Fixes** page controls base veil, factory smoke, unit names, the floating pickup book, player markers, HP-bar tick marks, classic ability fill, and ColorFix independently. |
-| Clean first run | Consent and loading screens prepare the local library without showing a console window. |
-| Saved GameInfo | The GameInfo page carries the exact configuration installed on 30 September 2026 and applies it only on request, with a backup. |
+| Cleaner world | Hide the base veil, factory smoke, pickup-book effect, in-world names and markers, or Graves' summon markers separately. |
+| Clearer HUD | Remove HP-bar tick marks; restore purple ability upgrades and legible checkmarks. Build-recommended upgrades now stand out in amber. |
+| Softer picture | Toggle **ColorFix** to lower scene contrast without recoloring the HUD. |
+| Simpler controls | The redesigned **Fixes** page uses on/off switches; the **GameInfo** page can reapply its saved preset at any time. |
+| Pickup-panel repair | The bundled preset no longer forces `citadel_in_world_item_panel_dpi 0`; a local in-game test confirmed that the white square above pickups disappeared. |
+
+The original skybox library remains: 32 named choices with previews, in-app **Apply** and **Restore**, and verified backups when an unknown skybox override must be replaced. The native WinForms interface also has animated cards, smooth scrolling, and a first-run setup without a console window.
 
 The window can be moved from any non-interactive surface, and the greeting automatically uses the current Windows account name.
 
@@ -43,25 +44,39 @@ The window can be moved from any non-interactive surface, and the greeting autom
 1. Download `SkyboxSelector.exe` from [Releases](https://github.com/harritoncloud/deadlock-skybox-selector/releases/latest).
 2. Close Deadlock and any Deadlock mod manager.
 3. Run the selector and approve Windows elevation if Deadlock is installed under `Program Files`.
-4. Approve the first-run library installation.
+4. Approve the first-run library and required GameInfo setup if prompted.
 5. Select a skybox card and press **Apply**.
-6. Press **Restore** whenever you want to return to the original Deadlock skybox.
+6. Use **Fixes** for optional visual tweaks. Press **Restore** on the skybox page to return to the original Deadlock skybox.
 
-On the **Fixes** page, each row has a switch showing whether that visual fix is active. Close Deadlock before switching. A slot occupied by another mod is reported and never overwritten.
+First-run setup installs the bundled GameInfo file if the game lacks the addon mount needed for skyboxes and fixes. Read [GameInfo preset](#gameinfo-preset) for its settings and caveats; **Apply Config** can reapply the same snapshot later.
 
-**Base Veil** removes the large team-colored clouds without changing gameplay fog or the selected skybox (`pak03_dir.vpk`). **Factory Smoke** removes the factory's large black pollution cloud (`pak04_dir.vpk`).
+## Visual Fixes
 
-**Unit Names** uses the [Hide Names mod](https://gamebanana.com/mods/722348) (`pak05_dir.vpk`); it keeps health bars and names printed on map geometry. **Pickup Book** (`pak06_dir.vpk`) hides the brief model above the player after collecting a bonus. That gained-effect model is shared by several pickups, so their floating models may also disappear; the world pickups, reward, beam, and glow remain.
+Each switch is independent. Close Deadlock before changing it; the result appears on the next launch. If an addon slot belongs to another mod, the selector reports the conflict instead of replacing that file.
 
-**Player Markers** (`pak07_dir.vpk`) hides the in-world player-name, portrait, and distance indicator. It leaves the separate object indicators and minimap alone. The override patches only the `PlayerEntry.visible` rule in Deadlock's compiled `hud_unit_indicators_v2` stylesheet.
+| Switch | Effect | Addon slot |
+| --- | --- | --- |
+| Base Veil | Hides the large team-colored clouds above the bases, not gameplay fog or the selected skybox. | `pak03` |
+| Factory Smoke | Hides the large black cloud above the factory. | `pak04` |
+| Unit Names | Hides floating labels over heroes and other units while keeping their health bars. | `pak05` |
+| Pickup Book | Hides the brief floating model after collecting a bonus; the pickup, reward, beam, and glow remain. | `pak06` |
+| Player Markers | Hides in-world player names, portraits, and distances without changing the minimap. | `pak07` |
+| Graves Markers | Hides distance icons for Graves' zombies and ultimate gravestone, without removing normal pings. | `pak07` |
+| HP Bar Lines | Hides the large and small tick marks inside your health bar, not its fill or numbers. | `pak08` |
+| Classic Ability Fill | Restores purple upgrade fills, lavender checkmarks and AP color; makes build recommendations amber. | `pak09` |
+| ColorFix | Softens scene contrast through post-processing while leaving the HUD unchanged. | `pak10` |
 
-**HP Bar Lines** (`pak08_dir.vpk`) hides the horizontal large and small tick marks inside the player's health bar. The health fill, border, and numeric values remain. The override changes only the two `#healthLines` opacity rules in Deadlock's compiled `hud_health` stylesheet.
+**A couple of details:** Player and Graves markers share one `pak07_dir.vpk` slot; the app installs the player-only, Graves-only, or combined override to keep both switches independent. Unit Names is based on the [Hide Names mod](https://gamebanana.com/mods/722348) and does not remove names printed on map geometry. Pickup Book uses a model shared by several gained-effect pickups, so their brief floating models may disappear too.
 
-**Classic Ability Fill** (`pak09_dir.vpk`) restores a brighter purple fill and readable lavender checkmarks for purchased ability-upgrade rows, instead of the newer green fill. The AP counter is purple too; upgrade state is unchanged.
+Classic Ability Fill also updates the upgrade hint, ability icon, and tooltip-card borders. The amber build recommendation is a visual highlight only; it does not change your build or upgrade state. Switch it off to restore the game's current colors.
 
-**ColorFix** (`pak10_dir.vpk`) softens the scene's contrast through the game's post-processing profiles. It does not alter the HUD and can be switched off independently to restore the original look.
+## GameInfo Preset
 
-The **GameInfo** page holds an exact snapshot of the current installed `gameinfo.gi` (SHA-256 `78695F98DC3FE3C2C4824DF769D8FFB1879F27DDA430CCF3B2E0A7C4B22DBC46`). **Apply Config** can reinstall this snapshot at any time, even when it already matches the game file. The file being replaced is backed up first. There is no GameInfo Restore button in the interface; backups remain on disk.
+The **GameInfo** page contains a saved, performance-oriented `gameinfo.gi` based on Sqooky's OptimizationLock Maxfps v1.0 ([view the exact file](./source/config/gameinfo.gi)). First-run setup installs this file when the game is missing the `citadel/addons` mount point. **Apply Config** replaces the current game file with the same snapshot and makes a timestamped backup first. You can reapply it even if the snapshot is already installed. There is no Restore button for GameInfo in the interface; its backups stay beside the game file.
+
+This snapshot keeps the user's low-texture assignments, `r_aspectratio 2.5`, and the disabled survey. It leaves `citadel_in_world_item_panel_dpi` at the game's default; that specific change was confirmed to remove the white pickup square in-game. The earlier `BindlessParticleShader 1` override is absent too, but removing it alone did **not** fix the square. The preset's SHA-256 is `CE91F9C6A1CCD7E1A723CFEA27050869D80118B7D1DDC2D049A9217556FAA972`.
+
+> **Important:** This preset sets `cl_phys_enabled false`, which can cause game issues. Some texture and camera commands have not been confirmed to work after the game update, so this is not an FPS guarantee. `cvarlist` showed the two texture LOD scale names, but not the mip-bias, stream-resolution, or aspect-ratio names. Keep your backup and test the preset for your setup.
 
 The verified library is stored in `<Deadlock>/dlskybox`. Older `deadlockcustomskybox` and `patchwin.cc-skyboxes` caches are migrated automatically.
 
@@ -108,7 +123,7 @@ Silver Overcast through Nightlock.
 
 | Protection | Implementation |
 | --- | --- |
-| Asset integrity | The embedded archive, runtime helpers, all 32 skybox VPKs, and eight visual fixes are checked with SHA-256. |
+| Asset integrity | The embedded archive, runtime helpers, all 32 skybox VPKs, and nine visual fixes are checked with SHA-256. |
 | Path confinement | Cache, backup, and addon operations are restricted to validated child paths. |
 | Transactional switching | Sources are verified before copying; failed changes roll back to the previous verified file. |
 | Unknown-mod preservation | An unfamiliar `pak01_dir.vpk` receives a verified timestamped backup before override. |

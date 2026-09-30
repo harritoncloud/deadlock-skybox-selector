@@ -170,6 +170,20 @@ if ((Get-Item -LiteralPath $markersPath).Length -ne [long]$markers.bytes -or
     throw "Player-marker override hash or size mismatch."
 }
 
+foreach ($gravesVariant in @($manifest.hideGravesMarkersOverride, $manifest.hideCombinedMarkersOverride)) {
+    if (-not $gravesVariant -or ([string]$gravesVariant.sha256) -notmatch '^[0-9a-fA-F]{64}$' -or
+        [long]$gravesVariant.bytes -le 0) {
+        throw "Graves-marker override metadata is invalid."
+    }
+    $gravesPath = Join-Path $assetRoot ([string]$gravesVariant.entry).Replace('/', '\')
+    Assert-File $gravesPath
+    if ((Get-Item -LiteralPath $gravesPath).Length -ne [long]$gravesVariant.bytes -or
+        (Get-FileHash -LiteralPath $gravesPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne
+            ([string]$gravesVariant.sha256).ToLowerInvariant()) {
+        throw "Graves-marker override hash or size mismatch."
+    }
+}
+
 $healthLines = $manifest.hideHealthLinesOverride
 if (-not $healthLines -or ([string]$healthLines.sha256) -notmatch '^[0-9a-fA-F]{64}$' -or
     [long]$healthLines.bytes -le 0) {
@@ -253,11 +267,26 @@ if ($configText -notmatch '(?im)^\s*citadel_show_survey\s+"false"') {
 if ($configText -notmatch '(?im)^\s*citadel_enable_survey\s+"false"') {
     throw "GameInfo does not throw the playtester survey kill switch."
 }
-if ($configText -notmatch '(?im)^\s*cl_phys_enabled\s+"true"') {
-    throw "GameInfo does not keep client physics enabled."
+if ($configText -notmatch '(?im)^\s*cl_phys_enabled\s+"false"') {
+    throw "GameInfo no longer matches the saved Maxfps physics setting."
 }
-if ($configText -match '(?im)^\s*cl_phys_enabled\s+"false"') {
-    throw "GameInfo still actively disables client physics."
+if ($configText -match '(?im)^\s*BindlessParticleShader\s+') {
+    throw "GameInfo must not force the particle shader associated with error textures."
+}
+if ($configText -match '(?im)^\s*citadel_in_world_item_panel_dpi\s+') {
+    throw "GameInfo must leave in-world pickup panels at the game's default resolution."
+}
+foreach ($setting in @(
+    @('r_aspectratio', '2.5'),
+    @('r_fallback_texture_lod_scale', '4'),
+    @('r_texture_lod_scale', '4'),
+    @('r_texture_stream_max_resolution', '512'),
+    @('r_texture_stream_mip_bias', '8')
+)) {
+    if ($configText -notmatch ('(?im)^\s*' + [regex]::Escape($setting[0]) + '\s+"' +
+        [regex]::Escape($setting[1]) + '"')) {
+        throw ("GameInfo no longer matches the saved camera/texture setting: " + $setting[0])
+    }
 }
 if (([regex]::Matches($configText, '\{')).Count -ne ([regex]::Matches($configText, '\}')).Count) {
     throw "GameInfo braces are unbalanced."

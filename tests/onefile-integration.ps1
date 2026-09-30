@@ -202,8 +202,44 @@ try {
     Assert-Exit (Invoke-Selector "names-show") 0 "Restore unit names twice"
     Assert-Exit (Invoke-Selector "smoke-show") 0 "Restore independent smoke"
 
+    $markerVariants = @(
+        $manifest.hidePlayerMarkersOverride,
+        $manifest.hideGravesMarkersOverride,
+        $manifest.hideCombinedMarkersOverride
+    )
+    foreach ($markerVariant in $markerVariants) {
+        $relative = ([string]$markerVariant.entry).Replace('/', '\')
+        Copy-Item -LiteralPath (Join-Path $assetRoot $relative) -Destination (Join-Path $fakeCache $relative)
+    }
+    $markerTarget = Join-Path $fakeAddons "pak07_dir.vpk"
+    [IO.File]::WriteAllBytes($markerTarget, [byte[]](7, 6, 5, 4))
+    $foreignMarkerHash = (Get-FileHash -LiteralPath $markerTarget -Algorithm SHA256).Hash
+    Assert-Exit (Invoke-Selector "graves-hide") 1 "Foreign marker-slot refusal"
+    if ((Get-FileHash -LiteralPath $markerTarget -Algorithm SHA256).Hash -ne $foreignMarkerHash) {
+        throw "The foreign pak07_dir.vpk was modified"
+    }
+    Remove-Item -LiteralPath $markerTarget -Force
+
+    foreach ($step in @(
+        @{ Action = "markers-hide"; Expected = $manifest.hidePlayerMarkersOverride.sha256 },
+        @{ Action = "graves-hide"; Expected = $manifest.hideCombinedMarkersOverride.sha256 },
+        @{ Action = "markers-show"; Expected = $manifest.hideGravesMarkersOverride.sha256 },
+        @{ Action = "markers-hide"; Expected = $manifest.hideCombinedMarkersOverride.sha256 },
+        @{ Action = "graves-show"; Expected = $manifest.hidePlayerMarkersOverride.sha256 }
+    )) {
+        Assert-Exit (Invoke-Selector $step.Action) 0 $step.Action
+        if ((Get-FileHash -LiteralPath $markerTarget -Algorithm SHA256).Hash -ne
+            ([string]$step.Expected).ToUpperInvariant()) {
+            throw "Marker settings after $($step.Action) do not match the requested combination"
+        }
+    }
+    Assert-Exit (Invoke-Selector "markers-show") 0 "Restore both marker types"
+    if (Test-Path -LiteralPath $markerTarget) {
+        throw "Restoring both marker types left pak07_dir.vpk installed"
+    }
+
     Assert-Exit (Invoke-Selector "select" "vanilla") 0 "Final Vanilla restore"
-    Write-Host "One-file integration passed: skybox switching, backup, Vanilla and three independent cosmetic toggles."
+    Write-Host "One-file integration passed: skybox switching, backup, Vanilla and independent cosmetic and marker toggles."
 }
 finally {
     Assert-SafeTestPath $testRoot

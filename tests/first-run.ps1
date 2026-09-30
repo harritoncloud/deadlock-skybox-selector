@@ -74,7 +74,9 @@ try {
     $manifest = Get-Content -LiteralPath (Join-Path $cacheRoot "manifest.json") -Raw | ConvertFrom-Json
     $thumbnails = @(Get-ChildItem -LiteralPath (Join-Path $cacheRoot ".thumbnails-v1") -File -Filter "*.jpg")
     $vpkFiles = @(Get-ChildItem -LiteralPath $cacheRoot -Recurse -File -Filter "*.vpk")
-    if (@($manifest.variants).Count -ne 32 -or $thumbnails.Count -ne 32 -or $vpkFiles.Count -ne 39) {
+    $overrideCount = @($manifest.PSObject.Properties | Where-Object { $_.Name -like "*Override" }).Count
+    if (@($manifest.variants).Count -ne 32 -or $thumbnails.Count -ne 32 -or
+        $vpkFiles.Count -ne (32 + $overrideCount)) {
         throw "First-run cache is incomplete."
     }
 

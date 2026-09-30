@@ -20,7 +20,7 @@ internal static class Program
 {
     private const string ResourceName = "DeadlockGameInfoInstaller.gameinfo.gi";
     private const string DefaultDeadlockRoot = @"C:\Program Files (x86)\Steam\steamapps\common\Deadlock";
-    private const string SavedGameInfoSha256 = "78695F98DC3FE3C2C4824DF769D8FFB1879F27DDA430CCF3B2E0A7C4B22DBC46";
+    private const string SavedGameInfoSha256 = "CE91F9C6A1CCD7E1A723CFEA27050869D80118B7D1DDC2D049A9217556FAA972";
 
     private static int Main(string[] args)
     {

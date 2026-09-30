@@ -89,8 +89,8 @@ foreach ($path in @(
 
 $gameInfoText = Get-Content -Raw -LiteralPath $gameInfoPath
 if ((Get-FileHash -LiteralPath $gameInfoPath -Algorithm SHA256).Hash -ne
-    "78695F98DC3FE3C2C4824DF769D8FFB1879F27DDA430CCF3B2E0A7C4B22DBC46") {
-    throw "GameInfo no longer matches the saved in-game config. Update the snapshot deliberately."
+    "CE91F9C6A1CCD7E1A723CFEA27050869D80118B7D1DDC2D049A9217556FAA972") {
+    throw "GameInfo no longer matches the tuned saved config. Update the snapshot deliberately."
 }
 if ($gameInfoText -notmatch '(?m)^GameInfo\s*$') {
     throw "GameInfo root is missing."
@@ -101,8 +101,8 @@ if ($gameInfoText -notmatch '(?im)^\s*citadel_show_survey\s+"false"') {
 if ($gameInfoText -notmatch '(?im)^\s*citadel_enable_survey\s+"false"') {
     throw "GameInfo must throw the playtester survey kill switch."
 }
-if ($gameInfoText -notmatch '(?im)^\s*cl_phys_enabled\s+"true"') {
-    throw "GameInfo must keep client physics enabled."
+if ($gameInfoText -notmatch '(?im)^\s*cl_phys_enabled\s+"false"') {
+    throw "GameInfo no longer matches the saved Maxfps physics setting."
 }
 if (([regex]::Matches($gameInfoText, '\{')).Count -ne ([regex]::Matches($gameInfoText, '\}')).Count) {
     throw "GameInfo braces are unbalanced."
