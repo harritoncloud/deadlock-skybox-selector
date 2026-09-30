@@ -20,6 +20,7 @@ internal static class Program
 {
     private const string ResourceName = "DeadlockGameInfoInstaller.gameinfo.gi";
     private const string DefaultDeadlockRoot = @"C:\Program Files (x86)\Steam\steamapps\common\Deadlock";
+    private const string SavedGameInfoSha256 = "78695F98DC3FE3C2C4824DF769D8FFB1879F27DDA430CCF3B2E0A7C4B22DBC46";
 
     private static int Main(string[] args)
     {
@@ -267,8 +268,9 @@ internal static class Program
 
     private static string RestoreBackup(string targetPath, string backupPath)
     {
-        byte[] restoredData = File.ReadAllBytes(backupPath);
-        ValidateRestoreCandidate(restoredData);
+        byte[] originalData = File.ReadAllBytes(backupPath);
+        ValidateRestoreCandidate(originalData);
+        byte[] restoredData = ApplyPersistentGameInfoOverrides(originalData);
 
         string expectedHash = ComputeSha256(restoredData);
         string temporaryPath = targetPath + ".patchwin-restore-new";
@@ -323,6 +325,64 @@ internal static class Program
             if (File.Exists(temporaryPath))
                 File.Delete(temporaryPath);
         }
+    }
+
+    private static byte[] ApplyPersistentGameInfoOverrides(byte[] data)
+    {
+        string text = new UTF8Encoding(false, true).GetString(data);
+        if (!Regex.IsMatch(text, @"(?im)^[ \t]*citadel_show_survey[ \t]+""(?:true|false)"""))
+            throw new InvalidDataException("The original GameInfo backup has no citadel_show_survey assignment.");
+
+        // Stock ships citadel_show_survey "true", but that convar only forces the survey UI on
+        // outside matchmaking - on its own it leaves the playtester panel free to appear. The
+        // documented kill switch is citadel_enable_survey, and survey_chance is the roll made when
+        // entering matchmaking, so a restored backup gets all three. Each missing line is written
+        // directly under the stock one, so the two are added in reverse to keep the reading order.
+        string patched = SetGameInfoConVar(text, "citadel_show_survey", "\"false\"");
+        patched = SetGameInfoConVar(patched, "survey_chance", "\"0\"");
+        patched = SetGameInfoConVar(patched, "citadel_enable_survey", "\"false\"");
+
+        byte[] result = new UTF8Encoding(false).GetBytes(patched);
+        ValidateRestoreCandidate(result);
+        return result;
+    }
+
+    /// <summary>
+    /// Forces one ConVars assignment in a GameInfo file. An assignment that is already present is
+    /// rewritten in place; a missing one is written next to citadel_show_survey, which is the survey
+    /// line Valve ships, using the indentation, value column and newline the file already uses.
+    /// </summary>
+    private static string SetGameInfoConVar(string text, string name, string quotedValue)
+    {
+        Regex assignment = new Regex(
+            @"(?im)^(?<head>[ \t]*" + Regex.Escape(name) + @"[ \t]+)""[^""\r\n]*""");
+        if (assignment.IsMatch(text))
+        {
+            return assignment.Replace(
+                text,
+                delegate(Match match) { return match.Groups["head"].Value + quotedValue; },
+                1);
+        }
+
+        Match anchor = Regex.Match(
+            text,
+            @"(?im)^(?<indent>[ \t]*)citadel_show_survey(?<gap>[ \t]+)""[^""\r\n]*""(?<trailer>[^\r\n]*)(?<eol>\r\n|\n|\r)?");
+        if (!anchor.Success)
+            throw new InvalidDataException("The GameInfo file has no citadel_show_survey assignment to anchor to.");
+
+        string indent = anchor.Groups["indent"].Value;
+        string newline = anchor.Groups["eol"].Value;
+        if (newline.Length == 0)
+            newline = text.IndexOf("\r\n", StringComparison.Ordinal) >= 0 ? "\r\n" : "\n";
+
+        int valueColumn = indent.Length + "citadel_show_survey".Length + anchor.Groups["gap"].Value.Length;
+        int padding = valueColumn - indent.Length - name.Length;
+        string line = indent + name + new String(' ', padding > 0 ? padding : 1) + quotedValue;
+
+        int insertAt = anchor.Index + anchor.Length;
+        if (anchor.Groups["eol"].Value.Length == 0)
+            return text.Substring(0, insertAt) + newline + line + text.Substring(insertAt);
+        return text.Substring(0, insertAt) + line + newline + text.Substring(insertAt);
     }
 
     private static void ValidateRestoreCandidate(byte[] data)
@@ -477,6 +537,8 @@ internal static class Program
 
     private static void ValidateConfig(byte[] payload)
     {
+        if (!String.Equals(ComputeSha256(payload), SavedGameInfoSha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Embedded GameInfo differs from the saved game config.");
         string text = new UTF8Encoding(false, true).GetString(payload);
         if (text.IndexOf("GameInfo", StringComparison.Ordinal) < 0)
         {
@@ -485,82 +547,6 @@ internal static class Program
         if (!Regex.IsMatch(text, @"(?im)^\s*Game\s+""citadel/addons""\s*$"))
         {
             throw new InvalidDataException("Embedded config does not mount citadel/addons.");
-        }
-
-        string[,] requiredAssignments =
-        {
-            { "r_farz", "-1" },
-            { "r_mapextents", "16384" },
-            { "r_nearz", "-1" },
-            { "sc_screen_size_lod_scale_override", "-1" },
-            { "sc_fade_distance_scale_override", "-1" },
-            { "r_size_cull_threshold", "0.85" },
-            { "r_render_hair", "true" },
-            { "r_pixelvisibility_partial", "true" },
-            { "engine_max_ticks_to_simulate", "-1" },
-            { "citadel_unit_status_use_new", "true" },
-            { "panorama_max_fps", "165" },
-            { "r_particle_max_size_cull", "900" },
-            { "sc_aggregate_gpu_vis_culling", "true" },
-            { "snd_steamaudio_num_diffuse_samples", "1024" },
-            { "fog_enable", "false" },
-            { "lb_enable_lights", "false" },
-            { "lb_enable_sunlight", "false" },
-            { "sc_disable_baked_lighting", "true" },
-            { "cl_phys_enabled", "true" },
-            { "r_hair_ao", "0" }
-        };
-
-        for (int i = 0; i < requiredAssignments.GetLength(0); i++)
-        {
-            string pattern = @"(?im)^\s*" + Regex.Escape(requiredAssignments[i, 0]) + @"\s+""" + Regex.Escape(requiredAssignments[i, 1]) + @"""";
-            if (!Regex.IsMatch(text, pattern))
-            {
-                throw new InvalidDataException("Embedded config is missing required assignment: " + requiredAssignments[i, 0]);
-            }
-        }
-
-        string[] userOwnedAssignments =
-        {
-            "citadel_video_preset",
-            "r_citadel_upscaling",
-            "mat_viewportscale",
-            "r_citadel_dlss_settings_mode",
-            "r_dlss_preset",
-            "r_citadel_fsr_rcas_sharpness",
-            "r_citadel_fsr2_sharpness",
-            "r_citadel_antialiasing",
-            "r_texture_stream_mip_bias",
-            "r_dashboard_render_quality",
-            "r_citadel_shadow_quality",
-            "mat_set_shader_quality",
-            "r_citadel_ssao_quality",
-            "r_citadel_distancefield_ao_quality",
-            "r_citadel_fog_quality",
-            "r_depth_of_field",
-            "r_effects_bloom",
-            "r_post_bloom",
-            "r_arealights",
-            "r_particle_depth_feathering",
-            "fps_max",
-            "r_low_latency",
-            "r_light_sensitivity_mode",
-            "fps_max_ui",
-            "fullscreen",
-            "nowindowborder",
-            "setting.defaultres",
-            "setting.defaultresheight",
-            "setting.refreshrate_numerator",
-            "setting.refreshrate_denominator"
-        };
-
-        foreach (string name in userOwnedAssignments)
-        {
-            string pattern = @"(?im)^\s*" + Regex.Escape(name) + @"\s+(?:""[^""\r\n]*""|[^\s/{][^\r\n/]*)";
-            if (Regex.IsMatch(text, pattern))
-            {
-                throw new InvalidDataException("Embedded config overrides a user-owned setting: " + name);
-            }
         }
 
         int openingBraces = 0;
@@ -583,7 +569,9 @@ internal static class Program
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
-            byte[] originalData = Encoding.ASCII.GetBytes("GameInfo\r\n{\r\n}\r\n");
+            byte[] originalData = Encoding.ASCII.GetBytes(
+                "GameInfo\r\n{\r\n    ConVars\r\n    {\r\n        citadel_show_survey \"true\"\r\n    }\r\n}\r\n");
+            byte[] expectedRestoreData = ApplyPersistentGameInfoOverrides(originalData);
             File.WriteAllBytes(targetPath, originalData);
             string backupPath = InstallPayload(targetPath, payload);
             if (String.IsNullOrEmpty(backupPath) || !File.Exists(backupPath))
@@ -609,7 +597,7 @@ internal static class Program
             {
                 throw new InvalidOperationException("Self-test did not back up the current config before restore.");
             }
-            if (!String.Equals(ComputeSha256(File.ReadAllBytes(targetPath)), ComputeSha256(originalData), StringComparison.OrdinalIgnoreCase))
+            if (!String.Equals(ComputeSha256(File.ReadAllBytes(targetPath)), ComputeSha256(expectedRestoreData), StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException("Self-test restore target hash mismatch.");
             }

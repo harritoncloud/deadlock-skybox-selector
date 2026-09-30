@@ -10,7 +10,7 @@ $projectRoot = Split-Path $PSScriptRoot -Parent
 $SelectorPath = if ($SelectorPath) {
     [IO.Path]::GetFullPath($SelectorPath)
 } else {
-    Join-Path $projectRoot "onefile\dist\SkyboxSelector.exe"
+    Join-Path $projectRoot "dist\SkyboxSelector.exe"
 }
 $testRoot = Join-Path $projectRoot ".first-run-audit"
 $fakeDeadlock = Join-Path $testRoot "Deadlock"
@@ -74,7 +74,7 @@ try {
     $manifest = Get-Content -LiteralPath (Join-Path $cacheRoot "manifest.json") -Raw | ConvertFrom-Json
     $thumbnails = @(Get-ChildItem -LiteralPath (Join-Path $cacheRoot ".thumbnails-v1") -File -Filter "*.jpg")
     $vpkFiles = @(Get-ChildItem -LiteralPath $cacheRoot -Recurse -File -Filter "*.vpk")
-    if (@($manifest.variants).Count -ne 32 -or $thumbnails.Count -ne 32 -or $vpkFiles.Count -ne 32) {
+    if (@($manifest.variants).Count -ne 32 -or $thumbnails.Count -ne 32 -or $vpkFiles.Count -ne 39) {
         throw "First-run cache is incomplete."
     }
 
@@ -99,6 +99,76 @@ try {
         throw "patchwin.cc-skyboxes migration failed."
     }
 
+    # A previously installed package has the old SHA, even when its variant id
+    # matches the requested one. Reapplying must replace it and retain a backup.
+    $syntheticVariant = @($manifest.variants | Where-Object id -eq "anime_01")[0]
+    $managedTarget = Join-Path $fakeCitadel "addons\pak01_dir.vpk"
+    New-Item -ItemType Directory -Force -Path (Split-Path $managedTarget -Parent) | Out-Null
+    Copy-Item -LiteralPath (Join-Path $cacheRoot $syntheticVariant.entry) -Destination $managedTarget
+    $oldBytes = [IO.File]::ReadAllBytes($managedTarget)
+    $oldBytes[$oldBytes.Length - 1] = $oldBytes[$oldBytes.Length - 1] -bxor 1
+    [IO.File]::WriteAllBytes($managedTarget, $oldBytes)
+    $syntheticLegacyHash = (Get-FileHash -LiteralPath $managedTarget -Algorithm SHA256).Hash
+    $cachedManifestPath = Join-Path $cacheRoot "manifest.json"
+    $cachedManifest = Get-Content -LiteralPath $cachedManifestPath -Raw | ConvertFrom-Json
+    @($cachedManifest.variants | Where-Object id -eq "anime_01")[0].legacySha256 = $syntheticLegacyHash.ToLowerInvariant()
+    $cachedManifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $cachedManifestPath -Encoding UTF8
+
+    & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $selectorScript `
+        -Action select -Selection anime_01 -DeadlockRoot $fakeDeadlock `
+        -CacheRoot $cacheRoot -WaitTimeoutSeconds 0
+    if ($LASTEXITCODE -ne 0 -or
+        (Get-FileHash -LiteralPath $managedTarget -Algorithm SHA256).Hash -ne $syntheticVariant.sha256.ToUpperInvariant()) {
+        throw "Reapplying an installed legacy skybox failed."
+    }
+    $oldBackups = @(Get-ChildItem -LiteralPath (Join-Path $cacheRoot "backups") -Recurse -File -Filter "pak01_dir.vpk")
+    if ($oldBackups.Count -ne 1 -or
+        (Get-FileHash -LiteralPath $oldBackups[0].FullName -Algorithm SHA256).Hash -ne $syntheticLegacyHash) {
+        throw "The old installed skybox was not backed up."
+    }
+
+    $veilTarget = Join-Path $fakeCitadel "addons\pak03_dir.vpk"
+    & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $selectorScript `
+        -Action veil-hide -DeadlockRoot $fakeDeadlock -CacheRoot $cacheRoot -WaitTimeoutSeconds 0
+    if ($LASTEXITCODE -ne 0 -or
+        (Get-FileHash -LiteralPath $veilTarget -Algorithm SHA256).Hash -ne
+            ([string]$manifest.baseVeilOverride.sha256).ToUpperInvariant()) {
+        throw "Hiding the base veil failed."
+    }
+    & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $selectorScript `
+        -Action veil-show -DeadlockRoot $fakeDeadlock -CacheRoot $cacheRoot -WaitTimeoutSeconds 0
+    if ($LASTEXITCODE -ne 0 -or (Test-Path -LiteralPath $veilTarget)) {
+        throw "Restoring the base veil failed."
+    }
+
+    $smokeTarget = Join-Path $fakeCitadel "addons\pak04_dir.vpk"
+    & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $selectorScript `
+        -Action smoke-hide -DeadlockRoot $fakeDeadlock -CacheRoot $cacheRoot -WaitTimeoutSeconds 0
+    if ($LASTEXITCODE -ne 0 -or
+        (Get-FileHash -LiteralPath $smokeTarget -Algorithm SHA256).Hash -ne
+            ([string]$manifest.factorySmokeOverride.sha256).ToUpperInvariant()) {
+        throw "Hiding the factory smoke failed."
+    }
+    & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $selectorScript `
+        -Action smoke-show -DeadlockRoot $fakeDeadlock -CacheRoot $cacheRoot -WaitTimeoutSeconds 0
+    if ($LASTEXITCODE -ne 0 -or (Test-Path -LiteralPath $smokeTarget)) {
+        throw "Restoring the factory smoke failed."
+    }
+
+    $namesTarget = Join-Path $fakeCitadel "addons\pak05_dir.vpk"
+    & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $selectorScript `
+        -Action names-hide -DeadlockRoot $fakeDeadlock -CacheRoot $cacheRoot -WaitTimeoutSeconds 0
+    if ($LASTEXITCODE -ne 0 -or
+        (Get-FileHash -LiteralPath $namesTarget -Algorithm SHA256).Hash -ne
+            ([string]$manifest.hideNamesOverride.sha256).ToUpperInvariant()) {
+        throw "Hiding unit names failed."
+    }
+    & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $selectorScript `
+        -Action names-show -DeadlockRoot $fakeDeadlock -CacheRoot $cacheRoot -WaitTimeoutSeconds 0
+    if ($LASTEXITCODE -ne 0 -or (Test-Path -LiteralPath $namesTarget)) {
+        throw "Restoring unit names failed."
+    }
+
     [pscustomobject]@{
         Variants = @($manifest.variants).Count
         VpkFiles = $vpkFiles.Count
@@ -106,7 +176,7 @@ try {
         ReadyHash = (Get-Content -LiteralPath (Join-Path $cacheRoot ".ready.sha256") -Raw).Trim()
     } | Format-List
     $results | Format-Table -AutoSize
-    Write-Host "First-run test passed: extract, validate, warm start and legacy cache migration."
+    Write-Host "First-run test passed: extract, validate, cache migration, old skybox reapply and three cosmetic toggles."
 }
 finally {
     Assert-SafeTestPath $testRoot

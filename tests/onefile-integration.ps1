@@ -132,8 +132,78 @@ try {
         throw "Unknown mod was not preserved in a verified backup"
     }
 
+    $veil = $manifest.baseVeilOverride
+    $veilCached = Join-Path $fakeCache (([string]$veil.entry).Replace('/', '\'))
+    New-Item -ItemType Directory -Force -Path (Split-Path $veilCached -Parent) | Out-Null
+    Copy-Item -LiteralPath (Join-Path $assetRoot (([string]$veil.entry).Replace('/', '\'))) -Destination $veilCached
+    $veilTarget = Join-Path $fakeAddons "pak03_dir.vpk"
+    [IO.File]::WriteAllBytes($veilTarget, [byte[]](9, 8, 7, 6))
+    $foreignVeilHash = (Get-FileHash -LiteralPath $veilTarget -Algorithm SHA256).Hash
+    Assert-Exit (Invoke-Selector "veil-hide") 1 "Foreign veil-slot refusal"
+    if ((Get-FileHash -LiteralPath $veilTarget -Algorithm SHA256).Hash -ne $foreignVeilHash) {
+        throw "The foreign pak03_dir.vpk was modified"
+    }
+    Remove-Item -LiteralPath $veilTarget -Force
+    Assert-Exit (Invoke-Selector "veil-hide") 0 "Hide base veil"
+    if ((Get-FileHash -LiteralPath $veilTarget -Algorithm SHA256).Hash -ne
+        ([string]$veil.sha256).ToUpperInvariant()) {
+        throw "Base-veil override hash mismatch"
+    }
+    Assert-Exit (Invoke-Selector "veil-show") 0 "Restore base veil"
+    if (Test-Path -LiteralPath $veilTarget) {
+        throw "Base-veil override was not removed"
+    }
+
+    $smoke = $manifest.factorySmokeOverride
+    $smokeCached = Join-Path $fakeCache (([string]$smoke.entry).Replace('/', '\'))
+    Copy-Item -LiteralPath (Join-Path $assetRoot (([string]$smoke.entry).Replace('/', '\'))) -Destination $smokeCached
+    $smokeTarget = Join-Path $fakeAddons "pak04_dir.vpk"
+    [IO.File]::WriteAllBytes($smokeTarget, [byte[]](6, 7, 8, 9))
+    $foreignSmokeHash = (Get-FileHash -LiteralPath $smokeTarget -Algorithm SHA256).Hash
+    Assert-Exit (Invoke-Selector "smoke-hide") 1 "Foreign smoke-slot refusal"
+    if ((Get-FileHash -LiteralPath $smokeTarget -Algorithm SHA256).Hash -ne $foreignSmokeHash) {
+        throw "The foreign pak04_dir.vpk was modified"
+    }
+    Remove-Item -LiteralPath $smokeTarget -Force
+    Assert-Exit (Invoke-Selector "veil-hide") 0 "Hide veil independently"
+    Assert-Exit (Invoke-Selector "smoke-hide") 0 "Hide factory smoke"
+    if ((Get-FileHash -LiteralPath $smokeTarget -Algorithm SHA256).Hash -ne
+        ([string]$smoke.sha256).ToUpperInvariant() -or -not (Test-Path -LiteralPath $veilTarget)) {
+        throw "Factory-smoke override or independent veil state is invalid"
+    }
+    Assert-Exit (Invoke-Selector "smoke-show") 0 "Restore factory smoke"
+    if ((Test-Path -LiteralPath $smokeTarget) -or -not (Test-Path -LiteralPath $veilTarget)) {
+        throw "Restoring factory smoke changed the base veil"
+    }
+    Assert-Exit (Invoke-Selector "veil-show") 0 "Restore independent veil"
+
+    $names = $manifest.hideNamesOverride
+    $namesCached = Join-Path $fakeCache (([string]$names.entry).Replace('/', '\'))
+    Copy-Item -LiteralPath (Join-Path $assetRoot (([string]$names.entry).Replace('/', '\'))) -Destination $namesCached
+    $namesTarget = Join-Path $fakeAddons "pak05_dir.vpk"
+    [IO.File]::WriteAllBytes($namesTarget, [byte[]](5, 4, 3, 2))
+    $foreignNamesHash = (Get-FileHash -LiteralPath $namesTarget -Algorithm SHA256).Hash
+    Assert-Exit (Invoke-Selector "names-hide") 1 "Foreign names-slot refusal"
+    if ((Get-FileHash -LiteralPath $namesTarget -Algorithm SHA256).Hash -ne $foreignNamesHash) {
+        throw "The foreign pak05_dir.vpk was modified"
+    }
+    Remove-Item -LiteralPath $namesTarget -Force
+    Assert-Exit (Invoke-Selector "names-hide") 0 "Hide unit names"
+    Assert-Exit (Invoke-Selector "names-hide") 0 "Hide unit names twice"
+    if ((Get-FileHash -LiteralPath $namesTarget -Algorithm SHA256).Hash -ne
+        ([string]$names.sha256).ToUpperInvariant()) {
+        throw "Hide-names override hash mismatch"
+    }
+    Assert-Exit (Invoke-Selector "smoke-hide") 0 "Hide smoke independently from names"
+    Assert-Exit (Invoke-Selector "names-show") 0 "Restore unit names"
+    if ((Test-Path -LiteralPath $namesTarget) -or -not (Test-Path -LiteralPath $smokeTarget)) {
+        throw "Restoring unit names changed the factory smoke"
+    }
+    Assert-Exit (Invoke-Selector "names-show") 0 "Restore unit names twice"
+    Assert-Exit (Invoke-Selector "smoke-show") 0 "Restore independent smoke"
+
     Assert-Exit (Invoke-Selector "select" "vanilla") 0 "Final Vanilla restore"
-    Write-Host "One-file integration passed: status, select, rollback, switch, unknown backup, Vanilla."
+    Write-Host "One-file integration passed: skybox switching, backup, Vanilla and three independent cosmetic toggles."
 }
 finally {
     Assert-SafeTestPath $testRoot

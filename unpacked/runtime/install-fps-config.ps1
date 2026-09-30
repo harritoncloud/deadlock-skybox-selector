@@ -28,6 +28,23 @@ function Normalize-Lines([string]$Text) {
     return (($Text -replace "`r`n", "`n") -replace "`r", "`n").Trim()
 }
 
+function Test-ManagedDeadlockRunning([string]$ManagedDeadlockRoot) {
+    # Scoped to the install being modified, the same way select-skybox.ps1 does it, so an
+    # unrelated executable named deadlock.exe cannot block the config.
+    $managedRoot = [IO.Path]::GetFullPath($ManagedDeadlockRoot).TrimEnd('\') + '\'
+    foreach ($process in @(Get-Process -Name "deadlock" -ErrorAction SilentlyContinue)) {
+        try {
+            if ([IO.Path]::GetFullPath($process.Path).StartsWith($managedRoot, [StringComparison]::OrdinalIgnoreCase)) {
+                return $true
+            }
+        } catch {
+            # If Windows hides the executable path, refusing is safer than editing live files.
+            return $true
+        }
+    }
+    return $false
+}
+
 try {
     $deadlockRoot = [IO.Path]::GetFullPath($DeadlockRoot).TrimEnd('\')
     $gameInfo = Join-Path $deadlockRoot "game\citadel\gameinfo.gi"
@@ -69,7 +86,7 @@ try {
         exit 10
     }
 
-    if (@(Get-Process -Name "deadlock" -ErrorAction SilentlyContinue).Count -gt 0) {
+    if (Test-ManagedDeadlockRunning $deadlockRoot) {
         throw "Close Deadlock before installing the FPS config."
     }
 

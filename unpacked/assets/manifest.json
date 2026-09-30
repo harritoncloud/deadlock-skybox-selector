@@ -1,4 +1,4 @@
-﻿{
+{
     "formatVersion":  2,
     "package":  "patchwin.cc Deadlock Skyboxes",
     "createdAtUtc":  "2026-08-09T13:53:10.0547140Z",
@@ -12,294 +12,366 @@
                    "realisticMd5":  "39a65954f3bbc941c55d7f2695453cb6"
                },
     "defaultSelection":  "anime_05",
+    "baseVeilOverride":  {
+                             "entry":  "overrides/base-veil-off_dir.vpk",
+                             "bytes":  19617,
+                             "sha256":  "17b4f0931a7b60368f36365f611ed6a75ff81b48560f7d9bb6d12f2d76fd93e5"
+                         },
+    "factorySmokeOverride":  {
+                                  "entry":  "overrides/factory-smoke-off_dir.vpk",
+                                  "bytes":  4670,
+                                  "sha256":  "2569ff7358bd88019f81d49c2d07f3537b2466c287834f32a9c1b4c47e72e147"
+                              },
+    "hideNamesOverride":  {
+                               "entry":  "overrides/hide-names_dir.vpk",
+                               "bytes":  79498,
+                               "sha256":  "c863b2bcd4eb48b340430960de8e350a18468591cadf9788b107ef2e3f4936b0"
+                           },
+    "hidePickupBookOverride":  {
+                                    "entry":  "overrides/hide-pickup-book_dir.vpk",
+                                    "bytes":  1340,
+                                    "sha256":  "ea84e982c86f3db94fcedf45627e8c78c9ae6f1dc780f3def6ad37817ae76c25"
+                                },
+    "hidePlayerMarkersOverride":  {
+                                       "entry":  "overrides/hide-player-markers_dir.vpk",
+                                       "bytes":  9459,
+                                       "sha256":  "eb976e9c9c5540fef04a628c722563e828bba589b964aaeac2c1525ad0ed8f1c"
+                                   },
+    "hideHealthLinesOverride":  {
+                                     "entry":  "overrides/hide-health-lines_dir.vpk",
+                                     "bytes":  24801,
+                                     "sha256":  "c8e6f8fc00081a64c0bae75a431986db13c13abb80e90f1c83e3bca00522782f"
+                                 },
+    "classicAbilityFillOverride":  {
+                                          "entry":  "overrides/classic-ability-fill_dir.vpk",
+                                          "bytes":  168904,
+                                          "sha256":  "c2732d4f9df4e8899a3eb3bc220686bc9f43513191bbc640b80b3045f2257c25"
+                                      },
+    "colorFixOverride":  {
+                              "entry":  "overrides/low-contrast_dir.vpk",
+                              "bytes":  267702,
+                              "sha256":  "827123ed9edc24e6d8d8221cd4cc12d21ef10bd3d9b06d088b70220d72049e60"
+                          },
     "variants":  [
                      {
                          "id":  "anime_01",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Golden Citadel",
                          "entry":  "variants/anime/anime_01_dir.vpk",
                          "preview":  "previews/anime/anime_01.png",
-                         "bytes":  2185,
-                         "sha256":  "819a40b67a8fb0c009a39072c15402abed722ca24c8413a3b6d9267d4c856ae1"
+                         "bytes":  2190,
+                         "sha256":  "a17d4a403f55099f11f6c46069dc2d264cbac3132c2d020fc55f03aab8055789",
+                         "legacySha256":  "819a40b67a8fb0c009a39072c15402abed722ca24c8413a3b6d9267d4c856ae1"
                      },
                      {
                          "id":  "anime_02",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Amber Rooftops",
                          "entry":  "variants/anime/anime_02_dir.vpk",
                          "preview":  "previews/anime/anime_02.jpg",
-                         "bytes":  2387,
-                         "sha256":  "094a3d6f7e98f7044ac25fb9026f93ea0cc15a2ded0f8e8a6b4f135384d20a94"
+                         "bytes":  2392,
+                         "sha256":  "bae9b2aad610b82867722fa8139f3221260032e1ab70bdf53b1686ac471e67a2",
+                         "legacySha256":  "094a3d6f7e98f7044ac25fb9026f93ea0cc15a2ded0f8e8a6b4f135384d20a94"
                      },
                      {
                          "id":  "anime_03",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Quiet Morning",
                          "entry":  "variants/anime/anime_03_dir.vpk",
                          "preview":  "previews/anime/anime_03.jpg",
-                         "bytes":  8392162,
-                         "sha256":  "d8c8f638ac2c507572a2ce9454db19548a45f6e1fbd4b26c5f1fc84962699dbc"
+                         "bytes":  8392167,
+                         "sha256":  "d7871f1d7f62d0ccd21d2df10331c1fcc9546048842ee78ebb7b382fa2468ba2",
+                         "legacySha256":  "d8c8f638ac2c507572a2ce9454db19548a45f6e1fbd4b26c5f1fc84962699dbc"
                      },
                      {
                          "id":  "anime_04",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Soft Sunrise",
                          "entry":  "variants/anime/anime_04_dir.vpk",
                          "preview":  "previews/anime/anime_04.jpg",
-                         "bytes":  8392162,
-                         "sha256":  "e7a614ac0e3e3c55d61c0df8ef0ae8d541715e108b7730ba48623ac18828f4a2"
+                         "bytes":  8392167,
+                         "sha256":  "1dae010b60c3ac58007486cb1c285ea740894c0ed2343cabc00b607d58f69433",
+                         "legacySha256":  "e7a614ac0e3e3c55d61c0df8ef0ae8d541715e108b7730ba48623ac18828f4a2"
                      },
                      {
                          "id":  "anime_05",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Azure City",
                          "entry":  "variants/anime/anime_05_dir.vpk",
                          "preview":  "previews/anime/anime_05.jpg",
-                         "bytes":  67112462,
-                         "sha256":  "a7c9367f66ab09a2eb1ee49dd6948c389d9040a611d47cb31e6df01d3e5a61a8"
+                         "bytes":  67112467,
+                         "sha256":  "c4c2360948993d86a1b1297731319bef52ccc6acd31d102860af7826e8b78f99",
+                         "legacySha256":  "a7c9367f66ab09a2eb1ee49dd6948c389d9040a611d47cb31e6df01d3e5a61a8"
                      },
                      {
                          "id":  "anime_06",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Golden Clouds",
                          "entry":  "variants/anime/anime_06_dir.vpk",
                          "preview":  "previews/anime/anime_06.jpg",
-                         "bytes":  67112462,
-                         "sha256":  "485a58bceb98648ba3a04723312a1c426d9585a536680a09b568315a75998902"
+                         "bytes":  67112467,
+                         "sha256":  "a55cbf00ce198c96c6b412beb603c70482e8a9fbf1b3f60e2b6e09351f9e8336",
+                         "legacySha256":  "485a58bceb98648ba3a04723312a1c426d9585a536680a09b568315a75998902"
                      },
                      {
                          "id":  "anime_07",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Clear Horizon",
                          "entry":  "variants/anime/anime_07_dir.vpk",
                          "preview":  "previews/anime/anime_07.jpg",
-                         "bytes":  33558154,
-                         "sha256":  "d400dd9410830fdb9a0b9a79f85af1d817f7d2c83f760c3ad228c438bf0fa47a"
+                         "bytes":  33558159,
+                         "sha256":  "1ec9603257e6e73e79af815090c8b691e2daf66b52ce9e51fbb2b71faf1a761b",
+                         "legacySha256":  "d400dd9410830fdb9a0b9a79f85af1d817f7d2c83f760c3ad228c438bf0fa47a"
                      },
                      {
                          "id":  "anime_08",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Blue Evening",
                          "entry":  "variants/anime/anime_08_dir.vpk",
                          "preview":  "previews/anime/anime_08.jpg",
-                         "bytes":  67112462,
-                         "sha256":  "edc500903740ff9d7f2ef93705a6f8b9a86fe8a4dfd3a0b2f0280564a8b3f50c"
+                         "bytes":  67112467,
+                         "sha256":  "3b02f305dd3bf24fc3f2402eebba0b4c620e6f993e230fc937162589b5139087",
+                         "legacySha256":  "edc500903740ff9d7f2ef93705a6f8b9a86fe8a4dfd3a0b2f0280564a8b3f50c"
                      },
                      {
                          "id":  "anime_09",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Starlit Night",
                          "entry":  "variants/anime/anime_09_dir.vpk",
                          "preview":  "previews/anime/anime_09.jpg",
-                         "bytes":  67112462,
-                         "sha256":  "4b9da58dd0abeebc3039825eae2d88f2eda8a039fe7ed3beb154c7658d3e09a3"
+                         "bytes":  67112467,
+                         "sha256":  "1f17bbe3382166c5886fd26b488047fa221e9b91f1c589c220282cdcfb86c3eb",
+                         "legacySha256":  "4b9da58dd0abeebc3039825eae2d88f2eda8a039fe7ed3beb154c7658d3e09a3"
                      },
                      {
                          "id":  "anime_10",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Mountain Air",
                          "entry":  "variants/anime/anime_10_dir.vpk",
                          "preview":  "previews/anime/anime_10.jpg",
-                         "bytes":  67112462,
-                         "sha256":  "d5b1bcee5b2cf899e4c5a5237847af20815fb6b031509555db05cc05d3f12383"
+                         "bytes":  67112467,
+                         "sha256":  "1c02afad9a7c9114a4bfd856ca58b63eceeeebff29ac2bc39942c008310e554d",
+                         "legacySha256":  "d5b1bcee5b2cf899e4c5a5237847af20815fb6b031509555db05cc05d3f12383"
                      },
                      {
                          "id":  "anime_11",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Cotton Candy",
                          "entry":  "variants/anime/anime_11_dir.vpk",
                          "preview":  "previews/anime/anime_11.jpg",
-                         "bytes":  67112478,
-                         "sha256":  "76a836111cc85108ccc59b2e2da70fd21e99b34e6b8817bfbec9b82114d49163"
+                         "bytes":  67112483,
+                         "sha256":  "1e18c956ed2f1652306fe9f2cda05ade8f6718aaad5624fb16b83fbffcb7f4bf",
+                         "legacySha256":  "76a836111cc85108ccc59b2e2da70fd21e99b34e6b8817bfbec9b82114d49163"
                      },
                      {
                          "id":  "anime_12",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Crystal Sky",
                          "entry":  "variants/anime/anime_12_dir.vpk",
                          "preview":  "previews/anime/anime_12.jpg",
-                         "bytes":  67112462,
-                         "sha256":  "39135c739401aff1237ec7d242588a4765a2e63875824f71569932e904b81493"
+                         "bytes":  67112467,
+                         "sha256":  "d14ad82f919881acde0822ae67410063a754b5b2fc59aa776b6dc28d00f55284",
+                         "legacySha256":  "39135c739401aff1237ec7d242588a4765a2e63875824f71569932e904b81493"
                      },
                      {
                          "id":  "anime_13",
                          "category":  "anime",
-                         "displayName":  null,
+                         "displayName":  "Bright Downtown",
                          "entry":  "variants/anime/anime_13_dir.vpk",
                          "preview":  "previews/anime/anime_13.jpg",
-                         "bytes":  67112462,
-                         "sha256":  "a3eee4f88f0b3454a324cdfc878bfd3fd2a8f00fcf179d9b1a15e3daf2ab78ac"
+                         "bytes":  67112467,
+                         "sha256":  "8aaac06b472637350b49d0b4f2285ae4a0d483b864164aed7245fa4dc8bbd429",
+                         "legacySha256":  "a3eee4f88f0b3454a324cdfc878bfd3fd2a8f00fcf179d9b1a15e3daf2ab78ac"
                      },
                      {
                          "id":  "realistic_01",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Silver Overcast",
                          "entry":  "variants/realistic/realistic_01_dir.vpk",
                          "preview":  "previews/realistic/realistic_01.jpg",
-                         "bytes":  8391953,
-                         "sha256":  "045d71c45d1cf6c40f8947a4c4c3e57f80747d9d06999fbde01fe97ade264e9b"
+                         "bytes":  8391958,
+                         "sha256":  "13837a5df8c5164e9f466346a98fc1da001397063598a89b40f2a655c45cc879",
+                         "legacySha256":  "045d71c45d1cf6c40f8947a4c4c3e57f80747d9d06999fbde01fe97ade264e9b"
                      },
                      {
                          "id":  "realistic_02",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Burnished Gold",
                          "entry":  "variants/realistic/realistic_02_dir.vpk",
                          "preview":  "previews/realistic/realistic_02.jpg",
-                         "bytes":  8392088,
-                         "sha256":  "d0df491bc5e7c220c864dfec4a7279987bb64bb25433d312b6699f0518ad6d76"
+                         "bytes":  8392093,
+                         "sha256":  "58ed4ac9e533d629cb12e2cc19d1c6fa6754d54efe1b97b2c0c3095cf882e78f",
+                         "legacySha256":  "d0df491bc5e7c220c864dfec4a7279987bb64bb25433d312b6699f0518ad6d76"
                      },
                      {
                          "id":  "realistic_03",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Rose Dusk",
                          "entry":  "variants/realistic/realistic_03_dir.vpk",
                          "preview":  "previews/realistic/realistic_03.jpg",
-                         "bytes":  8392024,
-                         "sha256":  "1808ed61fea8560ed538cd2d87a6f55776b2042cfb2b73b0780d5faa4631d148"
+                         "bytes":  8392029,
+                         "sha256":  "e69eecf08dddf2f5b2c8258891038a4a7d904ea5089b885c8162834a674e2c64",
+                         "legacySha256":  "1808ed61fea8560ed538cd2d87a6f55776b2042cfb2b73b0780d5faa4631d148"
                      },
                      {
                          "id":  "realistic_04",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Morning Glow",
                          "entry":  "variants/realistic/realistic_04_dir.vpk",
                          "preview":  "previews/realistic/realistic_04.jpg",
-                         "bytes":  8392024,
-                         "sha256":  "6c141814430ef576b97f06617b6de7eb17d573db15e5b1958dd7c9b44963f3a6"
+                         "bytes":  8392029,
+                         "sha256":  "8a1218235d20fe499d6df795866a9f14a301ba94c06c1a6e62693f0a71d1f4ea",
+                         "legacySha256":  "6c141814430ef576b97f06617b6de7eb17d573db15e5b1958dd7c9b44963f3a6"
                      },
                      {
                          "id":  "realistic_05",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Golden Hour",
                          "entry":  "variants/realistic/realistic_05_dir.vpk",
                          "preview":  "previews/realistic/realistic_05.jpg",
-                         "bytes":  8392088,
-                         "sha256":  "c01585521e495759475b95f9dd5c0204ffa2e0f73c5f590d3920e06bb17d3992"
+                         "bytes":  8392093,
+                         "sha256":  "885a82d9e58acf30695e5ec1834e50720ef9dac9e00c68d22fd71d380e8ef56e",
+                         "legacySha256":  "c01585521e495759475b95f9dd5c0204ffa2e0f73c5f590d3920e06bb17d3992"
                      },
                      {
                          "id":  "realistic_06",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "White Haze",
                          "entry":  "variants/realistic/realistic_06_dir.vpk",
                          "preview":  "previews/realistic/realistic_06.jpg",
-                         "bytes":  67112581,
-                         "sha256":  "8abd1558e40183d9c175a423eeeff03ff687d46f08f0cf53a2138cbd7c3f6c37"
+                         "bytes":  67112586,
+                         "sha256":  "990c39712cf9b67f619cd4a3f95b3731018d24e86bb5dd9e1fe894cb0bb314db",
+                         "legacySha256":  "8abd1558e40183d9c175a423eeeff03ff687d46f08f0cf53a2138cbd7c3f6c37"
                      },
                      {
                          "id":  "realistic_07",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Cloudbreak",
                          "entry":  "variants/realistic/realistic_07_dir.vpk",
                          "preview":  "previews/realistic/realistic_07.jpg",
-                         "bytes":  67112582,
-                         "sha256":  "e180e2692f2cc6a3e8bbee5a404fe09f076389b671c66eae148f70612187c111"
+                         "bytes":  67112587,
+                         "sha256":  "45a5fba440a1ce3ecfed975da035d43043aa20cc75adb16b76ef9879c3593a92",
+                         "legacySha256":  "e180e2692f2cc6a3e8bbee5a404fe09f076389b671c66eae148f70612187c111"
                      },
                      {
                          "id":  "realistic_08",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Pale Noon",
                          "entry":  "variants/realistic/realistic_08_dir.vpk",
                          "preview":  "previews/realistic/realistic_08.jpg",
-                         "bytes":  8392325,
-                         "sha256":  "bb3f0e5c8b9c316ece209ac87544a80d46097fa0fd88f621067df708702b7c03"
+                         "bytes":  8392330,
+                         "sha256":  "f79e7e7bb47795ef45358acac68d2688e02d1641543da339abfe60eab2ade2b4",
+                         "legacySha256":  "bb3f0e5c8b9c316ece209ac87544a80d46097fa0fd88f621067df708702b7c03"
                      },
                      {
                          "id":  "realistic_09",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Clear Day",
                          "entry":  "variants/realistic/realistic_09_dir.vpk",
                          "preview":  "previews/realistic/realistic_09.jpg",
-                         "bytes":  33558148,
-                         "sha256":  "ec740e8a143acb4c16af0546d52890fedb8aa21a72084a42c80925b82062b86b"
+                         "bytes":  33558153,
+                         "sha256":  "3a3e87a89b4e2772e5d92adddcb615b9830425ce62f4c0ce5b8dbd96a567f70c",
+                         "legacySha256":  "ec740e8a143acb4c16af0546d52890fedb8aa21a72084a42c80925b82062b86b"
                      },
                      {
                          "id":  "realistic_10",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "High Clouds",
                          "entry":  "variants/realistic/realistic_10_dir.vpk",
                          "preview":  "previews/realistic/realistic_10.jpg",
-                         "bytes":  8392325,
-                         "sha256":  "9bea64a97365e9331148c8318e51d307cd8df96118fa34bb4889a1d310dda9d8"
+                         "bytes":  8392330,
+                         "sha256":  "76372ef1956b9c6f36ab5981552754a2b4bf9ccbf0883e1956836ddc2058196a",
+                         "legacySha256":  "9bea64a97365e9331148c8318e51d307cd8df96118fa34bb4889a1d310dda9d8"
                      },
                      {
                          "id":  "realistic_11",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Storm Light",
                          "entry":  "variants/realistic/realistic_11_dir.vpk",
                          "preview":  "previews/realistic/realistic_11.jpg",
-                         "bytes":  8392289,
-                         "sha256":  "1d6520e9b706d0f45a852a23725b23eedc8680f31052d385cd3982dafa659d15"
+                         "bytes":  8392294,
+                         "sha256":  "1e76ff7616a678cee4a96998c1ef61ce04d56cddc33c4b6d20d723424e68a235",
+                         "legacySha256":  "1d6520e9b706d0f45a852a23725b23eedc8680f31052d385cd3982dafa659d15"
                      },
                      {
                          "id":  "realistic_12",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Grey Front",
                          "entry":  "variants/realistic/realistic_12_dir.vpk",
                          "preview":  "previews/realistic/realistic_12.jpg",
-                         "bytes":  67112596,
-                         "sha256":  "d2878f367ea7caa3f83ff23065e835a5d6af1c1c3ea17a4645bbbf2d42304879"
+                         "bytes":  67112601,
+                         "sha256":  "69858acefbdf614e48ebb56eae21cb18e8f0d52bfaa5442d187ebed79cfe1fb8",
+                         "legacySha256":  "d2878f367ea7caa3f83ff23065e835a5d6af1c1c3ea17a4645bbbf2d42304879"
                      },
                      {
                          "id":  "realistic_13",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Blue Skies",
                          "entry":  "variants/realistic/realistic_13_dir.vpk",
                          "preview":  "previews/realistic/realistic_13.jpg",
-                         "bytes":  8392403,
-                         "sha256":  "33d15845177deddd32f790bc1c8e63d56ddae0faea78f7b066f03b7d588f5166"
+                         "bytes":  8392408,
+                         "sha256":  "1379f0127bd4fb62c8d4eaa1615797b86ebce53c3624753c3902739e70e74c29",
+                         "legacySha256":  "33d15845177deddd32f790bc1c8e63d56ddae0faea78f7b066f03b7d588f5166"
                      },
                      {
                          "id":  "realistic_14",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Rainy Sunset",
                          "entry":  "variants/realistic/realistic_14_dir.vpk",
                          "preview":  "previews/realistic/realistic_14.jpg",
-                         "bytes":  2265,
-                         "sha256":  "48bec118ac942f3feb11c249d6bb43310189f9728675070ac8ff85fe3acc353b"
+                         "bytes":  2270,
+                         "sha256":  "0d3919f9370b8de0c194a0afdb7bcc2927b0537a8d89adb6b54b47fda5c67b56",
+                         "legacySha256":  "48bec118ac942f3feb11c249d6bb43310189f9728675070ac8ff85fe3acc353b"
                      },
                      {
                          "id":  "realistic_15",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Ember Sunset",
                          "entry":  "variants/realistic/realistic_15_dir.vpk",
                          "preview":  "previews/realistic/realistic_15.jpg",
-                         "bytes":  8392021,
-                         "sha256":  "aa526c19d79d199966440b7c30ff043de9981f1713de2edd048474e726cb0a8a"
+                         "bytes":  8392026,
+                         "sha256":  "0d0b5eb2dd6f5d8883f1d8b3aafee43246bcde963ac11e718e8aed73f3e8468c",
+                         "legacySha256":  "aa526c19d79d199966440b7c30ff043de9981f1713de2edd048474e726cb0a8a"
                      },
                      {
                          "id":  "realistic_16",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Fading Day",
                          "entry":  "variants/realistic/realistic_16_dir.vpk",
                          "preview":  "previews/realistic/realistic_16.jpg",
-                         "bytes":  8391956,
-                         "sha256":  "a963942de63d1b39c8422d65b13032d03769717848a5e9c42182be4dd7c38bd9"
+                         "bytes":  8391961,
+                         "sha256":  "2a1451c7fd2718b1397f8b1643cb8c7b94e1a9b6583d9317f8e3cdbf48543686",
+                         "legacySha256":  "a963942de63d1b39c8422d65b13032d03769717848a5e9c42182be4dd7c38bd9"
                      },
                      {
                          "id":  "realistic_17",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "City Mist",
                          "entry":  "variants/realistic/realistic_17_dir.vpk",
                          "preview":  "previews/realistic/realistic_17.jpg",
-                         "bytes":  8392006,
-                         "sha256":  "97fc81fcce260772a663060567a96becc2eddf0ee5dcffb5212b657e472a3fa9"
+                         "bytes":  8392011,
+                         "sha256":  "ec8844babe9c38ae7e1fb28976bc8170fdb91ae9e408bb042de52d901bd28b0c",
+                         "legacySha256":  "97fc81fcce260772a663060567a96becc2eddf0ee5dcffb5212b657e472a3fa9"
                      },
                      {
                          "id":  "realistic_18",
                          "category":  "realistic",
-                         "displayName":  null,
+                         "displayName":  "Deep Fog",
                          "entry":  "variants/realistic/realistic_18_dir.vpk",
                          "preview":  "previews/realistic/realistic_18.jpg",
-                         "bytes":  8392019,
-                         "sha256":  "4868cabf838f0a32fae577472d8b34573a17f73ed521fa7b547ed3d71cad72e4"
+                         "bytes":  8392024,
+                         "sha256":  "441dee96894ad4f3d984f0fa512f86cafdeff9a8dfa43d1535585f5362ac9d0b",
+                         "legacySha256":  "4868cabf838f0a32fae577472d8b34573a17f73ed521fa7b547ed3d71cad72e4"
                      },
                      {
                          "id":  "realistic_19",
                          "category":  "realistic",
-                         "displayName":  "Half-Life 2 Style",
+                         "displayName":  "Nightlock",
                          "entry":  "variants/realistic/realistic_19_dir.vpk",
                          "preview":  "previews/realistic/realistic_19.jpg",
-                         "bytes":  8392258,
-                         "sha256":  "7dccb02cd8827baf417a2afda5f9d6a42d9353245d82e13d27b991e9c29bf96d"
+                         "bytes":  8392263,
+                         "sha256":  "d1c431f0a3915683d330ae36eaf0a7b0139841cad6d4016394aa14df97373137",
+                         "legacySha256":  "7dccb02cd8827baf417a2afda5f9d6a42d9353245d82e13d27b991e9c29bf96d"
                      }
                  ]
 }

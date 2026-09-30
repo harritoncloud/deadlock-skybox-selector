@@ -24,6 +24,17 @@ $launcherSource = Join-Path $sourceRoot "launcher\Program.cs"
 $uiSource = Join-Path $sourceRoot "launcher\SelectorForm.cs"
 $launcherManifest = Join-Path $sourceRoot "launcher\app.manifest"
 $launcherIcon = Join-Path $sourceRoot "launcher\app.ico"
+# The interface face is embedded in the launcher and registered per process at startup, so nothing is
+# installed on the user's machine. It is not a runtime payload: it never lands on disk and therefore
+# stays out of runtime-checksums.sha256. The OFL requires the licence to travel with the font, so it
+# is embedded alongside it.
+#
+# One file, because the family has one drawn cut and that cut is already ultra-heavy. A second weight
+# would have nowhere to go: AddMemoryFont folds every cut of a family into a single GDI+ FontFamily,
+# and a FontFamily keeps only Regular, Bold and Italic. UiTheme therefore never sets the style bit on
+# this face - see IsWeightedFamily - and separates a heading from a caption by size and tracking.
+$launcherFont = Join-Path $sourceRoot "launcher\fonts\TitanOne-Regular.ttf"
+$launcherFontLicense = Join-Path $sourceRoot "launcher\fonts\TitanOne-OFL.txt"
 $installerSource = Join-Path $sourceRoot "gameinfo-installer\Program.cs"
 $installerManifest = Join-Path $sourceRoot "gameinfo-installer\app.manifest"
 $gameInfoPath = Join-Path $sourceRoot "config\gameinfo.gi"
@@ -59,6 +70,8 @@ foreach ($path in @(
     $uiSource,
     $launcherManifest,
     $launcherIcon,
+    $launcherFont,
+    $launcherFontLicense,
     $installerSource,
     $installerManifest,
     $gameInfoPath,
@@ -75,11 +88,18 @@ foreach ($path in @(
 }
 
 $gameInfoText = Get-Content -Raw -LiteralPath $gameInfoPath
+if ((Get-FileHash -LiteralPath $gameInfoPath -Algorithm SHA256).Hash -ne
+    "78695F98DC3FE3C2C4824DF769D8FFB1879F27DDA430CCF3B2E0A7C4B22DBC46") {
+    throw "GameInfo no longer matches the saved in-game config. Update the snapshot deliberately."
+}
 if ($gameInfoText -notmatch '(?m)^GameInfo\s*$') {
     throw "GameInfo root is missing."
 }
 if ($gameInfoText -notmatch '(?im)^\s*citadel_show_survey\s+"false"') {
     throw "GameInfo must disable the playtester survey."
+}
+if ($gameInfoText -notmatch '(?im)^\s*citadel_enable_survey\s+"false"') {
+    throw "GameInfo must throw the playtester survey kill switch."
 }
 if ($gameInfoText -notmatch '(?im)^\s*cl_phys_enabled\s+"true"') {
     throw "GameInfo must keep client physics enabled."
@@ -153,6 +173,12 @@ $resources = [ordered]@{
     (Join-Path $buildRuntime "7z.dll") = "SkyboxSelector.Payload.7z.dll"
     (Join-Path $buildRuntime "7zip-License.txt") = "SkyboxSelector.Payload.7zip-License.txt"
     (Join-Path $buildRuntime "assets.sha256") = "SkyboxSelector.Payload.assets.sha256"
+    $launcherFont = "SkyboxSelector.Payload.TitanOne-Regular.ttf"
+    $launcherFontLicense = "SkyboxSelector.Payload.TitanOne-OFL.txt"
+    # The icon is already attached to the executable through /win32icon, but the shell only exposes
+    # that to Explorer. Embedding the same file as a resource is what lets the rail badge decode the
+    # exact 40 px frame; Icon.ExtractAssociatedIcon would only ever hand back 32 px.
+    $launcherIcon = "SkyboxSelector.Payload.app.ico"
     $runtimeChecksums = "SkyboxSelector.Payload.runtime-checksums.sha256"
     $archivePath = "SkyboxSelector.Payload.skyboxes.7z"
 }

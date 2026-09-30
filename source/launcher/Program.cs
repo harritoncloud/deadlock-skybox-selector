@@ -61,6 +61,21 @@ internal static class Program
     {
         public int formatVersion { get; set; }
         public AssetVariant[] variants { get; set; }
+        public AssetOverride baseVeilOverride { get; set; }
+        public AssetOverride factorySmokeOverride { get; set; }
+        public AssetOverride hideNamesOverride { get; set; }
+        public AssetOverride hidePickupBookOverride { get; set; }
+        public AssetOverride hidePlayerMarkersOverride { get; set; }
+        public AssetOverride hideHealthLinesOverride { get; set; }
+        public AssetOverride classicAbilityFillOverride { get; set; }
+        public AssetOverride colorFixOverride { get; set; }
+    }
+
+    private sealed class AssetOverride
+    {
+        public string entry { get; set; }
+        public long bytes { get; set; }
+        public string sha256 { get; set; }
     }
 
     private sealed class AssetVariant
@@ -108,6 +123,7 @@ internal static class Program
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
+                UiScale.Configure(SelectorForm.LayoutWidth, SelectorForm.LayoutHeight);
 
                 if (requiresLibraryInstall && !options.InstallApproved)
                 {
@@ -477,25 +493,30 @@ internal static class Program
 
     private static void EnsureThumbnailCache(string cacheRoot, string expectedAssetHash)
     {
-        string thumbnailRoot = Path.Combine(cacheRoot, ThumbnailCacheDirectoryName);
-        string markerPath = Path.Combine(thumbnailRoot, ".ready.sha256");
-        if (File.Exists(markerPath) &&
-            String.Equals(File.ReadAllText(markerPath).Trim(), expectedAssetHash, StringComparison.OrdinalIgnoreCase))
-        {
-            bool complete = true;
-            for (int index = 1; index <= 13 && complete; index++)
-                complete = File.Exists(Path.Combine(thumbnailRoot, "anime_" + index.ToString("00") + ".jpg"));
-            for (int index = 1; index <= 19 && complete; index++)
-                complete = File.Exists(Path.Combine(thumbnailRoot, "realistic_" + index.ToString("00") + ".jpg"));
-            if (complete)
-                return;
-        }
-
         string manifestPath = Path.Combine(cacheRoot, "manifest.json");
         JavaScriptSerializer serializer = new JavaScriptSerializer();
         AssetManifest manifest = serializer.Deserialize<AssetManifest>(File.ReadAllText(manifestPath));
         if (manifest == null || manifest.variants == null || manifest.variants.Length != 32)
             throw new InvalidDataException("Cannot prepare thumbnails from an invalid cache manifest.");
+
+        string thumbnailRoot = Path.Combine(cacheRoot, ThumbnailCacheDirectoryName);
+        string markerPath = Path.Combine(thumbnailRoot, ".ready.sha256");
+        if (File.Exists(markerPath) &&
+            String.Equals(File.ReadAllText(markerPath).Trim(), expectedAssetHash, StringComparison.OrdinalIgnoreCase))
+        {
+            // Completeness is checked against the manifest itself so a renamed or added
+            // variant cannot be reported as cached.
+            bool complete = true;
+            foreach (AssetVariant variant in manifest.variants)
+            {
+                if (File.Exists(Path.Combine(thumbnailRoot, variant.id + ".jpg")))
+                    continue;
+                complete = false;
+                break;
+            }
+            if (complete)
+                return;
+        }
 
         string stagingRoot = Path.Combine(
             cacheRoot,
@@ -694,6 +715,86 @@ internal static class Program
 
         if (animeCount != 13 || realisticCount != 19)
             throw new InvalidDataException("Skybox cache category counts are invalid.");
+
+        AssetOverride veil = manifest.baseVeilOverride;
+        if (veil == null || !Regex.IsMatch(veil.sha256 ?? "", "^[0-9a-fA-F]{64}$") || veil.bytes <= 0)
+            throw new InvalidDataException("Base-veil override metadata is missing or invalid.");
+        string veilPath = ResolveSafeCacheEntry(cacheRoot, veil.entry);
+        if (!File.Exists(veilPath) || (File.GetAttributes(veilPath) & FileAttributes.ReparsePoint) != 0 ||
+            new FileInfo(veilPath).Length != veil.bytes)
+            throw new InvalidDataException("Base-veil override is missing or has an invalid size.");
+        if (verifyFiles && !String.Equals(ComputeSha256(veilPath), veil.sha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Base-veil override failed SHA-256 verification.");
+
+        AssetOverride smoke = manifest.factorySmokeOverride;
+        if (smoke == null || !Regex.IsMatch(smoke.sha256 ?? "", "^[0-9a-fA-F]{64}$") || smoke.bytes <= 0)
+            throw new InvalidDataException("Factory-smoke override metadata is missing or invalid.");
+        string smokePath = ResolveSafeCacheEntry(cacheRoot, smoke.entry);
+        if (!File.Exists(smokePath) || (File.GetAttributes(smokePath) & FileAttributes.ReparsePoint) != 0 ||
+            new FileInfo(smokePath).Length != smoke.bytes)
+            throw new InvalidDataException("Factory-smoke override is missing or has an invalid size.");
+        if (verifyFiles && !String.Equals(ComputeSha256(smokePath), smoke.sha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Factory-smoke override failed SHA-256 verification.");
+
+        AssetOverride names = manifest.hideNamesOverride;
+        if (names == null || !Regex.IsMatch(names.sha256 ?? "", "^[0-9a-fA-F]{64}$") || names.bytes <= 0)
+            throw new InvalidDataException("Hide-names override metadata is missing or invalid.");
+        string namesPath = ResolveSafeCacheEntry(cacheRoot, names.entry);
+        if (!File.Exists(namesPath) || (File.GetAttributes(namesPath) & FileAttributes.ReparsePoint) != 0 ||
+            new FileInfo(namesPath).Length != names.bytes)
+            throw new InvalidDataException("Hide-names override is missing or has an invalid size.");
+        if (verifyFiles && !String.Equals(ComputeSha256(namesPath), names.sha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Hide-names override failed SHA-256 verification.");
+
+        AssetOverride book = manifest.hidePickupBookOverride;
+        if (book == null || !Regex.IsMatch(book.sha256 ?? "", "^[0-9a-fA-F]{64}$") || book.bytes <= 0)
+            throw new InvalidDataException("Pickup-book override metadata is missing or invalid.");
+        string bookPath = ResolveSafeCacheEntry(cacheRoot, book.entry);
+        if (!File.Exists(bookPath) || (File.GetAttributes(bookPath) & FileAttributes.ReparsePoint) != 0 ||
+            new FileInfo(bookPath).Length != book.bytes)
+            throw new InvalidDataException("Pickup-book override is missing or has an invalid size.");
+        if (verifyFiles && !String.Equals(ComputeSha256(bookPath), book.sha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Pickup-book override failed SHA-256 verification.");
+
+        AssetOverride markers = manifest.hidePlayerMarkersOverride;
+        if (markers == null || !Regex.IsMatch(markers.sha256 ?? "", "^[0-9a-fA-F]{64}$") || markers.bytes <= 0)
+            throw new InvalidDataException("Player-marker override metadata is missing or invalid.");
+        string markersPath = ResolveSafeCacheEntry(cacheRoot, markers.entry);
+        if (!File.Exists(markersPath) || (File.GetAttributes(markersPath) & FileAttributes.ReparsePoint) != 0 ||
+            new FileInfo(markersPath).Length != markers.bytes)
+            throw new InvalidDataException("Player-marker override is missing or has an invalid size.");
+        if (verifyFiles && !String.Equals(ComputeSha256(markersPath), markers.sha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Player-marker override failed SHA-256 verification.");
+
+        AssetOverride healthLines = manifest.hideHealthLinesOverride;
+        if (healthLines == null || !Regex.IsMatch(healthLines.sha256 ?? "", "^[0-9a-fA-F]{64}$") || healthLines.bytes <= 0)
+            throw new InvalidDataException("HP-bar line override metadata is missing or invalid.");
+        string healthLinesPath = ResolveSafeCacheEntry(cacheRoot, healthLines.entry);
+        if (!File.Exists(healthLinesPath) || (File.GetAttributes(healthLinesPath) & FileAttributes.ReparsePoint) != 0 ||
+            new FileInfo(healthLinesPath).Length != healthLines.bytes)
+            throw new InvalidDataException("HP-bar line override is missing or has an invalid size.");
+        if (verifyFiles && !String.Equals(ComputeSha256(healthLinesPath), healthLines.sha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("HP-bar line override failed SHA-256 verification.");
+
+        AssetOverride classicFill = manifest.classicAbilityFillOverride;
+        if (classicFill == null || !Regex.IsMatch(classicFill.sha256 ?? "", "^[0-9a-fA-F]{64}$") || classicFill.bytes <= 0)
+            throw new InvalidDataException("Classic ability-fill override metadata is missing or invalid.");
+        string classicFillPath = ResolveSafeCacheEntry(cacheRoot, classicFill.entry);
+        if (!File.Exists(classicFillPath) || (File.GetAttributes(classicFillPath) & FileAttributes.ReparsePoint) != 0 ||
+            new FileInfo(classicFillPath).Length != classicFill.bytes)
+            throw new InvalidDataException("Classic ability-fill override is missing or has an invalid size.");
+        if (verifyFiles && !String.Equals(ComputeSha256(classicFillPath), classicFill.sha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Classic ability-fill override failed SHA-256 verification.");
+
+        AssetOverride colorFix = manifest.colorFixOverride;
+        if (colorFix == null || !Regex.IsMatch(colorFix.sha256 ?? "", "^[0-9a-fA-F]{64}$") || colorFix.bytes <= 0)
+            throw new InvalidDataException("ColorFix override metadata is missing or invalid.");
+        string colorFixPath = ResolveSafeCacheEntry(cacheRoot, colorFix.entry);
+        if (!File.Exists(colorFixPath) || (File.GetAttributes(colorFixPath) & FileAttributes.ReparsePoint) != 0 ||
+            new FileInfo(colorFixPath).Length != colorFix.bytes)
+            throw new InvalidDataException("ColorFix override is missing or has an invalid size.");
+        if (verifyFiles && !String.Equals(ComputeSha256(colorFixPath), colorFix.sha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("ColorFix override failed SHA-256 verification.");
 
         string animePreview = Path.Combine(cacheRoot, "previews", "anime-contact-sheet.jpg");
         string realisticPreview = Path.Combine(cacheRoot, "previews", "realistic-contact-sheet.jpg");

@@ -668,20 +668,16 @@ GameInfo
         // ================ Preferences ================
         // --- 0. IMPORTANT ---
         citadel_trooper_glow_disabled     "1"      // 1 = Disable friendly/enemy minion glow.                          [def: "0"]
-        cl_phys_enabled                   "true"  // Keep client physics enabled for ragdolls, cloth, hair, and loose props. [def: "true"]
-        r_citadel_enable_pano_world_blur  "false"  // This command disables the blur in the shop and improves the performance of the shop DRAMATICALLY however it can cause visual issues with the pause menu on nvidia systems running vulkan. Please experiment. [def: "true"]
+        cl_phys_enabled                   "true"  // Disables all physics. This means ragdolls just maintain the last pose and boxes don't fall over [def: "true"]
         r_particle_explicit_fetch         "false"  // [def: "false"]        // I believe this improves performance but will make soul orbs a bit difficult to see
-        r_particle_max_size_cull          "900"  // Shift oversized particle culling work from the CPU to the GPU.     [def: "1200"]
+        r_particle_max_size_cull          "1200" // Restore native particle culling threshold.                         [def: "1200"]
         sc_screen_size_lod_scale_override "-1"   // Let the engine choose native screen-size LOD scaling.               [def: "-1"]
         steam_inputhandler_enabled        "true"   // This disables controller support when set to false. Setting to false should improve performance if you're not on a steam deck, but some people are, and I don't want an influx of "why no work with controller"  [def: "true"]
 
         // --- 1. Outlines ---
         citadel_boss_glow_disabled                             "1"    // Disables boss and walker glow/highlight effect.                  [def: "0]
         citadel_damage_offscreen_indicator_disabled            "true" // The little trooper portraits that show up behind walls.          [def: "true"]
-        citadel_player_glow_disabled                           "0"    // Disables player glow/highlight effect when pinged.               [def: "0"]
         citadel_unit_status_allies_see_thru_walls              "true" // Do you want to see allied player outlines through walls          [def: "true"]
-        citadel_unit_status_allies_see_thru_walls_max_distance "40"   // How far to make allied players' unit status show through walls.  [def: "0"] (0 means no limit)
-        citadel_unit_status_dpi                                "10"   // This increases the size of the health bar. Unfortunately I think this lowers performance. A shame. [def: "10"]
 
         // --- 2. Field of View ---
         // These commands both affect fov but do so in different ways. citadel_camera_hero_fov changes the field of view using typical degrees but doesn't modify the punch zoom in. This means that if you have a high fov value the zoom in can be disorienting.
@@ -691,19 +687,13 @@ GameInfo
         // 1.75=80fov | 2.15=90fov | 2.49=100fov (every .15 interval = 5 fov).
 
         // --- 3. HUD ---
+        citadel_unit_status_hide_names                "true"  // Hide names above units; keep health bars enabled.
         citadel_damage_report_enable                    "1"     // Enables/Disables incoming/outgoing damage tab (tuning this off is very questionable but okay). [def: "1"]
-        citadel_damage_text_batching_window_ability     "1000"  // How long to wait until batching damage text.
         citadel_distance_mouse_move_for_minimap_drawing "1"     // this command makes drawing on the minimap more precise so you can actually doodle on it :D makes me happy [def: "15"]
         citadel_hideout_ball_show_juggle_count          "1"     // Shows a fun juggle count minigame for hideout ball.              [def: "0"]
         citadel_hideout_ball_show_juggle_fx             "1"     // Shows juggle visual FX for hideout ball minigame.                [def: "0"]
         citadel_hud_objective_health_debug_show_midboss "false" // This makes midboss' health bar visible whenever it's able to be rendered. I like it, you might not [def: "false"]
         citadel_hud_objective_health_enabled            "2"     // 0=Off, 1=Shrines, 2=T1/T2, 3=Barracks.                           [def: "2"]
-        citadel_show_chat_wheel_angle_threshold         "0"     // (degrees) Increase this to change how much you have to move your camera angle to make the Chat Wheel instantly visible while holding Ping. [def: "16"]
-        citadel_unit_status_old_update_rate             "15"    // How frequently health bars can update. Lowering it should improve performance    [def: "30"]
-        citadel_unit_status_single_bar_mode             "false" // This makes the v2 halth bar be one bar as opposed to multiple, which I find more easily readable [def: "false"]
-        citadel_unit_status_use_new                     "true"  // This uses new Health Bar, to use old Health Bar change "true" to "false".    [def: "false"]
-        citadel_unit_status_use_v2                      "0"     // Set to 1 to enable the new health bar that allows you to  see enemy stamina. [def: "0"]
-        citadel_unit_status_use_v2_for_nonplayers       "0"     // Set to 1 to enable the new health bar but for troopers, objs, and camps.     [def: "0"]
         v8_maximum_heap_size_mb                         "1024"
 
         // --- 4. Lighting & Shadows ---
@@ -714,11 +704,9 @@ GameInfo
 
         // --- 5. FPS Caps & Minimized Throttling ---
         engine_low_latency_sleep_after_client_tick "false" // When r_low_latency is enabled, this moves the low latency sleep on tick frames to happen after client simulation. [def: "false"]
-        panorama_max_fps                           "165"   // Keep the main menu aligned with the 165 FPS cap.
-        panorama_max_overlay_fps                   "165"   // Keep settings and pause overlays aligned with the menu cap.
 
         // --- 6. Object Culling ---
-        r_size_cull_threshold "0.85" // Cull only very small screen-space objects slightly earlier.       [def: "0.8"]
+        r_size_cull_threshold "0.8" // Restore native object screen-size culling.                         [def: "0.8"]
 
         // --- 7. Camera Tweaks ---
         // citadel_camera_listening_offset    "-1"   // To be completely honest I have no idea but I want to test this.  [def: "0"]
@@ -732,12 +720,15 @@ GameInfo
         // --- 8. Texture Quality ---
         r_texture_budget_threshold     "0.7" // Reduce texture memory pool size when this percentage of the budget is full. [def: "0.8"]
         r_texture_budget_update_period "0.5" // Time (in seconds) between updating texture memory budget.        [def: "0.1"]
+        r_fallback_texture_lod_scale   "4"   // Use lower-resolution fallback texture mips. [def: "2"]
+        r_texture_lod_scale            "4"   // Request lower-resolution streamed textures. [def: "1"]
+        r_texture_stream_max_resolution "512" // Current minimum allowed by the captured ConVar list; old 128 is below it.
+        r_texture_stream_mip_bias      "8"   // Strongly prefer lower texture mips. [def: "0"]
         r_texturefilteringquality      "0"   // Texture filtering, has very low fps impact. 0: Bilinear, 1: Trilinear, 2: Aniso 2x, 3: Aniso 4x, 4: Aniso 8x, 5: Aniso 16x
 
         // --- 9. Render Distance ---
-        r_farz       "-1"    // Use the map/engine far clipping plane to prevent early pop-in.   [def: "-1"]
+        r_farz       "8000"  // Shorter far clipping plane, matching the old low-distance profile. [def: "-1"]
         r_mapextents "16384" // Restore native world extents.                                   [def: "16384"]
-        r_nearz      "-1"    // Use the engine near clipping plane.                             [def: "-1"]
 
         // ================ IMPORTANT ================
         thread_pool_option "2" // If I understand correctly, this should be how threads are handled relative to the game, but there isn't a clear indication of what changing it even does. For now I have it at -1 which is the default, but your mileage may vary. [def: "-1"]
@@ -759,45 +750,35 @@ GameInfo
         panorama_disable_blur       "true"  // Disables UI blur effects in the UI.                              [def: "false"]
         panorama_disable_box_shadow "true"  // Disables UI box shadows in the UI (less GPU/UI cost).            [def: "false"]
         panorama_panel_occlusion    "true"  // According to John Valve this is an optimization feature that stops rendering of panels underneath the top level. [def: "true"]
+        r_dashboard_render_quality  "1"     // Sets dashboard/UI render quality (lower = cheaper UI rendering). [def: "1"]
 
         // ================ Shadows ================
-        cl_globallight_shadow_mode               "2"    // No idea. It is disabled based on the name.                       [def: "2"]
         lb_barnlight_shadowmap_scale             "0"    // Scale for computed barnlight shadowmap size (lower = cheaper).   [def: "1"]
         lb_csm_cascade_size_override             "1"    // Enables overriding CSM cascade sizing rules (forces engine to use override values). [def: "-1"]
         lb_csm_draw_alpha_tested                 "0"    // Prevents alpha-tested geometry from being included in CSM passes (cheaper, possible missing leaf/fence shadows). [def: "1"]
         lb_csm_draw_translucent                  "0"    // Prevents translucent objects from rendering into CSM (cheaper, fewer shadow details). [def: "1"]
         lb_csm_override_staticgeo_cascades       "true" // Override Cascades that will render static objects with lb_csm_override_staticgeo_cascades_value. [def: "false"]
         lb_csm_override_staticgeo_cascades_value "true" // If lb_csm_override_staticgeo_cascades, override value used to determine which cascades render static objects [def: "false"]
-        lb_dynamic_shadow_resolution_base        "16"   // Base resolution for dynamic shadows (lower = cheaper).           [def: "1024"]
+        lb_dynamic_shadow_resolution_base        "128"  // Current minimum; lower values are clamped. [def: "1024"]
         lb_enable_shadow_casting                 "0"    // Disables baked shadows I believe                                 [def: "1"]
-        lb_ssss_samples                          "0"    // Subsurface sample count                                          [def: "11"]
+        lb_ssss_samples                          "3"    // Current minimum; lower values are clamped. [def: "11"]
         lb_sun_csm_size_cull_threshold_texels    "100"  // Culls tiny CSM contributions below a texel threshold (performance).              [def: "10"]
-        r_citadel_gpu_culling_shadows            "1"    // Enables GPU-driven culling for shadow casters (performance).     [def: "0"]
         r_citadel_shadow_caching                 "true" // We disable all shadows so this shouldn't be needed               [def: "true"]
-        r_shadows                                "0"    // Disables dynamic shadows.                                        [def: "1"]
+        r_citadel_shadow_quality                 "0"    // Deadlock/Citadel shadow quality level (0 = lowest).              [def: "2"]
         r_size_cull_threshold_shadow             "1"    // Threshold of shadow map size percentage below which objects get culled (higher = cull more to save shadow cost). [def: "0.2"]
-        sc_disable_spotlight_shadows             "1"    // Disables spotlight shadows.                                      [def: "0"]
         sparseshadowtree_disable_for_viewmodel   "1"    // Disable SST generation and runtime for viewmodel (use original CSM rendering).   [def: "1"]
         sparseshadowtree_enable_rendering        "0"    // Enables Sparse Shadow Tree, rendering static geometry into shadow cascades.      [def: "0"]
 
         // ================ Lighting ================
         cl_retire_low_priority_lights               "1"     // Replaces/drops low-priority dynamic lights when higher-priority lights are present (helps cap dlight clutter/cost). [def: "0"]
-        lb_enable_lights                             "false" // Disable the light-binner lighting pass.                        [def: "true"]
-        lb_enable_sunlight                           "false" // Disable sunlight in the light binner.                           [def: "true"]
-        mat_async_shader_load                       "1"     // I have no reason to believe the name doesn't match the function  [def: "0"]
         mat_max_lighting_complexity                 "0"     // Doesn't seem to do anything but throwing it in for posterity.    [def: "8"]
-        r_citadel_distancefield_farfield_enable     "1"     // Restore long-range distance-field rendering.                     [def: "1"]
-        r_citadel_ssao_thin_occluder_compensation   "0"     // Disables special handling for thin occluders in SSAO (cheaper).  [def: "0.5"]
+        r_citadel_ssao_quality                      "0"     // SSAO quality level (0 = lowest/off-ish).                         [def: "3"]
         r_citadel_sun_shadow_slope_scale_depth_bias "0"     // \\                                                               [def: "3.54"]
-        r_directlighting                            "false" // Set to true to have your characters not be black in the shop     [def:"true"]
         r_distancefield_enable                      "1"     // Restore the distance-field system used by long-range rendering. [def: "1"]
         r_light_flickering_enabled                  "0"     // Enables light flicker effects where used.                        [def: "1"]
-        r_lightmap_bicubic_filtering                "1"     // Enables bicubic filtering on lightmaps.                          [def: "1"]
         r_lightmap_size                             "2048"  // Maximum lightmap resolution..                                    [def: "65536"]
         r_lightmap_size_directional_irradiance      "0"     // Sets directional irradiance lightmap data size (lower = less detail) (-1 = uses value of r_lightmap_size ). [def: "-1"]
-        r_multiscattering                           "1"     // Enables multi-scattering lighting approximation.                 [def: "1"]
         r_rendersun                                 "0"     // Disables sun lighting.                                           [def: "1"]
-        sc_disable_baked_lighting                   "true"  // Disable baked scene lighting.                                    [def: "false"]
         r_ssao                                      "0"     // Disables screen-space ambient occlusion.                         [def: "1"]
         r_ssao_strength                             "0"     // AO strength multiplier (0 = no AO contribution).                 [def: "1.2"]
 
@@ -807,8 +788,6 @@ GameInfo
         ragdoll_parallel_pose_control "1"  // Multithreaded ragdoll handling, better performance (if ragdolls aren't disabled). [def: "0"]
 
         // ================ Models ================
-        animgraph_enable_parallel_op_evaluation "1"    // Allows animgraph operator evaluation to run in parallel (performance).   [def: "0"]
-        animgraph_enable_parallel_preupdate     "1"    // Allows animgraph pre-update work to run in parallel (performance).       [def: "0"]
         cl_fasttempentcollision                 "5"    // Restore the engine default; 1000 causes excessive collision work. [def: "5"]
         cloth_sim_on_tick                       "0"    // Update the cloth simulation every tick                           [def: "1"]
         enable_boneflex                         "1"    // Keep procedural bone flexes active for correct model animation.  [def: "1"]
@@ -822,10 +801,13 @@ GameInfo
         // ================ Visual Clarity ================
         cl_show_splashes                     "0"     // Disables splash effects (water/impact splashes).                 [def: "1"]
         mat_colorcorrection                  "1"     // Disables/ Enables color correction (game looks less vibrant when off).   [def: "1"]
-        r_character_decal_resolution         "4"     // Resolution of character decal textures.                          [def: "1024"]
+        r_character_decal_resolution         "256"   // Current minimum; lower values are clamped. [def: "1024"]
         r_decals                             "1"     // Maximum number of decals allowed. (lower = fewer bullet holes/blood/impact marks). [def: "2048"]
         r_decals_default_fade_duration       "3"     // Restore native decal visibility duration.                       [def: "3"]
+        r_depth_of_field                     "0"     // Disables depth of field.                                         [def: "1"]
         r_drawdecals                         "1"     // *Render decals.                                                  [def: "1"]
+        r_effects_bloom                      "0"     // Disables effects bloom.                                          [def: "1"]
+        r_post_bloom                         "0"     // Disables post-process bloom.                                     [def: "1"]
         sc_clutter_enable                    "true"  // Restore native clutter-prop rendering.                           [def: "true"]
         violence_ablood                      "0"     // Disables alien/other blood effects.                              [def: "1"]
         violence_agibs                       "0"     // Disables alien/other gibs.                                       [def: "1"]
@@ -858,14 +840,11 @@ GameInfo
         cl_particle_batch_mode                   "1"       // Has a range of 1 or 2, 2 will make celeste's auto rebound look weird and 0 will make them not batch [def: "1"]
         particle_cluster_nodraw                  "0"       // Restore particle-cluster drawing.                                [def: "0"]
         particle_cluster_use_collision_hulls     "true"    // Restore native particle collision hulls.                         [def: "true"]
-        r_RainParticleDensity                    "1"       // Restore native rain-particle density.                            [def: "1"]
-        r_citadel_screenspace_particles_full_res "true"    // Render screen space particles at full resolution. This could introduce readability issues but should be fine. [def: "true"]
         r_draw_particle_children_with_parents    "-1"      // Restore engine-controlled child-particle drawing.                [def: "-1"]
         r_limit_particle_job_duration            "false"   // Do not truncate native particle work.                            [def: "false"]
         r_particle_allowprerender                "true"    // I imagine it renders particles prematurely, which we do not care for.    [def: "true"]
         r_particle_batch_collections             "false"   // Restore native collection handling.                              [def: "false"]
         r_particle_fixedrandomseeds              "false"   // Restore native randomized effect placement.                      [def: "false"]
-        r_particle_max_detail_level              "3"       // Restore native particle detail ceiling.                          [def: "3"]
         r_particle_max_texture_layers            "-1"      // Let the engine choose the native texture-layer limit.            [def: "-1"]
         r_particle_min_timestep                  "0"       // Restore native particle update timing.                           [def: "0"]
         r_particle_model_per_thread_count        "32"      // Restore native per-thread particle-model count.                  [def: "32"]
@@ -890,8 +869,6 @@ GameInfo
         skeleton_instance_lod_optimization      "false" // Compute LOD mask internally like since 2016, i.e. force all LOD groups' bones to compute [def: "false"]
 
         // ================ Rendering Stuff ================
-        r_citadel_gpu_culling      "true" // The game barely uses the gpu so this is a win                    [def: "true"]
-        sc_aggregate_gpu_vis_culling "true" // Cull aggregate meshes against GPU visibility data.             [def: engine]
         //r_force_zprepass               "0"     // 0: Force z prepass off. 1: Force on. -1: Don't force             [def: "-1"]
         // With my understanding of how zprepasses work this should reduce cpu usage if set to zero, but that's under the assumption that valve's implementation isn't properly optimized. Please play with this. Your mileage may vary.
         r_vma_defrag_algorithm     "0"     // Should speed up vulkan defragging, which could increase performance if you're  getting bad performance the longer a match goes on [def: "1"]
@@ -899,6 +876,7 @@ GameInfo
         rtx_dynamic_blas_caching   "true"  //                                                                  [def: "true"]
         rtx_force_default_hitgroup "true"  //                                                                  [def: "false"]
         rtx_texture_resolution     "64"    //                                                                  [def: "true"]
+        citadel_video_preset       "3"     // Restore the native video preset identifier.                       [def: "3"]
         // sc_aggregate_indirect_draw_compaction_threshold "1"     // Need to test                                                   [def: "8"]
         sc_instanced_mesh_opaque_fade "true"  // Restore native opaque-mesh fading.                               [def: "true"]
         //sc_aggregate_render_mesh_shader                    "true" // Using mesh shaders if available instead of drawcalls. Should be cheaper [def: "true"]
@@ -909,19 +887,17 @@ GameInfo
 
         // ================ Sound ================
         snd_steamaudio_max_occlusion_samples "64"   // Restore native occlusion sampling.                                [def: "64"]
-        snd_steamaudio_num_diffuse_samples   "1024" // Balanced Steam Audio reflection sampling.                        [def: "2048"]
+        snd_steamaudio_num_diffuse_samples   "1024" // Halved: Steam Audio reflection sampling runs on the CPU.          [def: "2048"]
 
 
         // ================ Misc ================
-        r_hair_ao                                         "0" // Disable hair ambient-occlusion shading while keeping hair visible. [def: "1"]
+        r_hair_ao                                         "1" // Restore native hair ambient occlusion.                           [def: "1"]
         r_drawtracers_firstperson                         "false"
         citadel_bullet_shot_offset_fade_time              "0"
         r_drawviewmodel                                   "true"
         r_citadel_gpu_preview_denoise_passes              "0"
-        r_citadel_cloak_blur_amount                       "0"
         r_drawropes                                       "true"
         viewmodel_fov                                     "0"
-        csm_viewmodel_farz                                "1"
         sparseshadowtree_leaf_precision_viewmodel         "0"
         csm_viewmodel_max_shadow_dist                     "1"
         csm_viewmodel_max_visible_dist                    "1"
@@ -929,14 +905,10 @@ GameInfo
         debug_draw_enable                                 "false"
         default_fov                                       "0"
         citadel_show_survey                               "false"
-        citadel_test_ranked_summary                       "true"
+        citadel_enable_survey                             "false" // The actual kill switch: the playtester survey is never shown.                  [def: engine]
+        survey_chance                                     "0"     // Second layer: chance of survey questions when entering matchmaking.            [def: engine]
         r_particle_newinput                               "true"
-        fog_enable                                        "false" // Disable the engine fog pass.                                     [def: "true"]
-        r_enable_gradient_fog                             "false" // These commands just disable fog. I don't think you can disable fog via cvars (In this config I accomplish it through scenesystem), but in the event that they save us a render pass they are disabled
         r_enable_rigid_animation                          "true"
-        r_enable_volume_fog                               "false"
-        r_enable_cubemap_fog                              "false"
-        cl_enable_eye_occlusion                           "false"  // [def: "true"]
         ent_joint_lines                                   "false"  // [def: "true"]        // These shouldn't be needed?
         ent_joint_names                                   "false"  // [def: "true"]        //
         r_render_hair                                     "true"   // Restore native hair rendering.                                  [def: "true"]
@@ -954,11 +926,9 @@ GameInfo
         cl_phys_assume_fixed_tick_interval                "true"   // Assume the client uses a fixed tickrate like the server (which may not always be true)                   [def: "true"]
         engine_max_ticks_to_simulate                      "-1"     // Do not force simulation slowdown after only two ticks.          [def: "-1"]
         parallel_perform_invalidate_physics               "false"  // Not sure                                                         [def: "false"]
-        r_async_compute_fog                               "true"   // Just whether to asyncroniously render fog                        [def: "false"]
-        r_citadel_depth_prepass_dynamic_objects           "false"  // Should be not prepassing entities that move                      [def: "true"]
         r_renderdoc_auto_shader_pdbs                      "false"  // Automatically generate shader debug info on capture.             [def: "true"]
         save_parallel                                     "true"   // Absolutely no idea but typically paralell processing is good.    [def: "false"]
-        r_max_portal_render_targets                       "0"      // Restore native portal-render-target management.                  [def: "0"]
+        r_max_portal_render_targets                       "2"      // Keep two portal render targets available for ability-door views.
         // ^ This will cause visual bugs when set to 1, either set it to 2 or 0 to disable them.
         //r_low_latency                                     "0"      // This acts as the convar which enables low latency, hardware dependent    [def: "1"]
         //sc_force_materials_batchable                      "true"   // I would imagine this functions as the variable is named.         [def: "false"]
@@ -969,7 +939,6 @@ GameInfo
         r_grass_start_fade "0" // When to cull grass when it's close I think                       [def: "0"]
 
         // ================ Creep AI ================
-        citadel_npc_force_animate_every_tick "false" // Don't change this, it does what it says on the tin.              [def: "true"]
         cl_simulate_dormant_entities         "false" // Based on the name I would imagine it does what it says.          [def: "true"]
 
         // ================ Audio ================
@@ -992,7 +961,6 @@ GameInfo
         csm_cascade3_override_dist               "0"     // All of these commands should reduce shadow quality.
         csm_max_dist_between_caster_and_receiver "0"     // All of these commands should reduce shadow quality.
         csm_max_num_cascades_override            "0"     // All of these commands should reduce shadow quality.
-        csm_max_shadow_dist_override             "0"     // All of these commands should reduce shadow quality.
         csm_max_visible_dist                     "0"     // All of these commands should reduce shadow quality.
         csm_res_override_0                       "1"     // All of these commands should reduce shadow quality.
         csm_res_override_1                       "1"     // All of these commands should reduce shadow quality.
@@ -1100,7 +1068,6 @@ GameInfo
         sv_lagcomp_filterbyviewangle "false"
 
         // Spew warning when adding/removing classes to/from the top of the hierarchy
-        panorama_classes_perf_warning_threshold_ms "0.75"
 
         // Panorama - enable minidumps on JS exceptions
         panorama_js_minidumps "1"
@@ -1122,7 +1089,6 @@ GameInfo
         snd_steamaudio_enable_pathing      "0"
         snd_steamaudio_invalid_path_length "0.0"
         cl_disconnect_soundevent           "citadel.convar.stop_all_game_layer_soundevents"
-        snd_event_browser_default_stack    "citadel_default_3d"
 
         // voip
         voice_in_process "1"
@@ -1154,11 +1120,11 @@ GameInfo
         // Networking - Induced latency (pred offset)
         cl_tickpacket_recvmargin_desired              "5"   // 5 ms base, min. floor for protecting against thrashing the queue
         cl_tickpacket_desired_queuelength             "0"   // 0 = attempt to always reach the queue's min floor
-        cl_async_usercmd_send_disabled_recvmargin_min "0.5" // Additional frame since we do not use the async usercmd send (potentially unneccessary)
         cl_clock_buffer_ticks                         "1"
         cl_interp_ratio                               "0"
         cl_async_usercmd_send                         "false"
 
+        fps_max_ui "165"
 
         in_button_double_press_window "0.3"
 
@@ -1186,8 +1152,6 @@ GameInfo
         cl_joystick_enabled       "0"
         panorama_joystick_enabled "0"
 
-
-        snd_event_browser_focus_events "true"
 
         cl_max_particle_pvs_aabb_edge_length "100"
 

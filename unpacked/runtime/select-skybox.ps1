@@ -1,11 +1,13 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("status", "select", "validate-cache")]
+    [ValidateSet("status", "select", "validate-cache", "veil-hide", "veil-show", "smoke-hide", "smoke-show", "names-hide", "names-show", "book-hide", "book-show", "markers-hide", "markers-show", "lines-hide", "lines-show", "fill-hide", "fill-show", "colorfix-on", "colorfix-off")]
     [string]$Action = "select",
     [string]$Selection = "",
     [string]$DeadlockRoot = $(if ($env:DEADLOCK_ROOT) { $env:DEADLOCK_ROOT } else { "C:\Program Files (x86)\Steam\steamapps\common\Deadlock" }),
     [string]$CacheRoot = $(if ($env:SKYBOX_CACHE_ROOT) { $env:SKYBOX_CACHE_ROOT } else { "" }),
-    [string]$BackupRoot = ""
+    [string]$BackupRoot = "",
+    [ValidateRange(0, 3600)]
+    [int]$WaitTimeoutSeconds = 45
 )
 
 $ErrorActionPreference = "Stop"
@@ -38,8 +40,9 @@ function Resolve-CacheEntry([string]$Entry, [string]$Root) {
     return $resolved
 }
 
-function Wait-ForManagedProcesses([string]$ManagedDeadlockRoot) {
+function Wait-ForManagedProcesses([string]$ManagedDeadlockRoot, [int]$TimeoutSeconds) {
     $waiting = $false
+    $deadline = (Get-Date).AddSeconds([Math]::Max(0, $TimeoutSeconds))
     while ($true) {
         $running = @()
         $managedRoot = [IO.Path]::GetFullPath($ManagedDeadlockRoot).TrimEnd('\') + '\'
@@ -62,10 +65,16 @@ function Wait-ForManagedProcesses([string]$ManagedDeadlockRoot) {
             return
         }
 
+        $names = ($running | Select-Object -ExpandProperty ProcessName -Unique) -join ", "
+        # The selector starts this script hidden, so an unbounded wait would look like a frozen
+        # application. Fail with a message the interface can show instead.
+        if ((Get-Date) -ge $deadline) {
+            throw "Close Deadlock and Deadlock Mod Manager, then try again. Still running: $names"
+        }
+
         if (-not $waiting) {
-            $names = ($running | Select-Object -ExpandProperty ProcessName -Unique) -join ", "
             Write-Host "Waiting for Deadlock and Deadlock Mod Manager to close: $names" -ForegroundColor Yellow
-            Write-Host "Checking once per second. Press Ctrl+C to cancel."
+            Write-Host "Checking once per second for up to $TimeoutSeconds seconds."
             $waiting = $true
         }
         Start-Sleep -Seconds 1
@@ -142,6 +151,7 @@ try {
     }
 
     $knownManagedHashes = @{}
+    $legacyManagedHashes = @{}
     $variantsById = @{}
     $variantPaths = @{}
     foreach ($variant in $variants) {
@@ -161,6 +171,15 @@ try {
 
         $variantPath = Resolve-CacheEntry ([string]$variant.entry) $CacheRoot
         $knownManagedHashes[$hash] = $id
+        if ($variant.PSObject.Properties.Name -contains "legacySha256") {
+            $legacyHash = ([string]$variant.legacySha256).ToUpperInvariant()
+            if ($legacyHash -notmatch '^[0-9A-F]{64}$' -or
+                $knownManagedHashes.ContainsKey($legacyHash)) {
+                throw "Invalid or duplicate legacy variant hash in cache manifest: $id"
+            }
+            $knownManagedHashes[$legacyHash] = $id
+            $legacyManagedHashes[$legacyHash] = $id
+        }
         $variantsById[$id] = $variant
         $variantPaths[$id] = $variantPath
     }
@@ -182,7 +201,87 @@ try {
                 throw "Cached VPK failed verification: $id"
             }
         }
-        Write-Host "Cache verification passed: 32 skyboxes." -ForegroundColor Green
+        $veil = $manifest.baseVeilOverride
+        if (-not $veil -or ([string]$veil.sha256).ToUpperInvariant() -notmatch '^[0-9A-F]{64}$') {
+            throw "The base-veil override metadata is invalid."
+        }
+        $veilPath = Resolve-CacheEntry ([string]$veil.entry) $CacheRoot
+        if (-not (Test-Path -LiteralPath $veilPath -PathType Leaf) -or
+            (Get-Item -LiteralPath $veilPath).Length -ne [long]$veil.bytes -or
+            (Get-Sha256 $veilPath) -ne ([string]$veil.sha256).ToUpperInvariant()) {
+            throw "The cached base-veil override failed verification."
+        }
+        $smoke = $manifest.factorySmokeOverride
+        if (-not $smoke -or ([string]$smoke.sha256).ToUpperInvariant() -notmatch '^[0-9A-F]{64}$') {
+            throw "The factory-smoke override metadata is invalid."
+        }
+        $smokePath = Resolve-CacheEntry ([string]$smoke.entry) $CacheRoot
+        if (-not (Test-Path -LiteralPath $smokePath -PathType Leaf) -or
+            (Get-Item -LiteralPath $smokePath).Length -ne [long]$smoke.bytes -or
+            (Get-Sha256 $smokePath) -ne ([string]$smoke.sha256).ToUpperInvariant()) {
+            throw "The cached factory-smoke override failed verification."
+        }
+        $names = $manifest.hideNamesOverride
+        if (-not $names -or ([string]$names.sha256).ToUpperInvariant() -notmatch '^[0-9A-F]{64}$') {
+            throw "The hide-names override metadata is invalid."
+        }
+        $namesPath = Resolve-CacheEntry ([string]$names.entry) $CacheRoot
+        if (-not (Test-Path -LiteralPath $namesPath -PathType Leaf) -or
+            (Get-Item -LiteralPath $namesPath).Length -ne [long]$names.bytes -or
+            (Get-Sha256 $namesPath) -ne ([string]$names.sha256).ToUpperInvariant()) {
+            throw "The cached hide-names override failed verification."
+        }
+        $book = $manifest.hidePickupBookOverride
+        if (-not $book -or ([string]$book.sha256).ToUpperInvariant() -notmatch '^[0-9A-F]{64}$') {
+            throw "The pickup-book override metadata is invalid."
+        }
+        $bookPath = Resolve-CacheEntry ([string]$book.entry) $CacheRoot
+        if (-not (Test-Path -LiteralPath $bookPath -PathType Leaf) -or
+            (Get-Item -LiteralPath $bookPath).Length -ne [long]$book.bytes -or
+            (Get-Sha256 $bookPath) -ne ([string]$book.sha256).ToUpperInvariant()) {
+            throw "The cached pickup-book override failed verification."
+        }
+        $markers = $manifest.hidePlayerMarkersOverride
+        if (-not $markers -or ([string]$markers.sha256).ToUpperInvariant() -notmatch '^[0-9A-F]{64}$') {
+            throw "The player-marker override metadata is invalid."
+        }
+        $markersPath = Resolve-CacheEntry ([string]$markers.entry) $CacheRoot
+        if (-not (Test-Path -LiteralPath $markersPath -PathType Leaf) -or
+            (Get-Item -LiteralPath $markersPath).Length -ne [long]$markers.bytes -or
+            (Get-Sha256 $markersPath) -ne ([string]$markers.sha256).ToUpperInvariant()) {
+            throw "The cached player-marker override failed verification."
+        }
+        $healthLines = $manifest.hideHealthLinesOverride
+        if (-not $healthLines -or ([string]$healthLines.sha256).ToUpperInvariant() -notmatch '^[0-9A-F]{64}$') {
+            throw "The health-line override metadata is invalid."
+        }
+        $healthLinesPath = Resolve-CacheEntry ([string]$healthLines.entry) $CacheRoot
+        if (-not (Test-Path -LiteralPath $healthLinesPath -PathType Leaf) -or
+            (Get-Item -LiteralPath $healthLinesPath).Length -ne [long]$healthLines.bytes -or
+            (Get-Sha256 $healthLinesPath) -ne ([string]$healthLines.sha256).ToUpperInvariant()) {
+            throw "The cached health-line override failed verification."
+        }
+        $classicFill = $manifest.classicAbilityFillOverride
+        if (-not $classicFill -or ([string]$classicFill.sha256).ToUpperInvariant() -notmatch '^[0-9A-F]{64}$') {
+            throw "The classic ability-fill override metadata is invalid."
+        }
+        $classicFillPath = Resolve-CacheEntry ([string]$classicFill.entry) $CacheRoot
+        if (-not (Test-Path -LiteralPath $classicFillPath -PathType Leaf) -or
+            (Get-Item -LiteralPath $classicFillPath).Length -ne [long]$classicFill.bytes -or
+            (Get-Sha256 $classicFillPath) -ne ([string]$classicFill.sha256).ToUpperInvariant()) {
+            throw "The cached classic ability-fill override failed verification."
+        }
+        $colorFix = $manifest.colorFixOverride
+        if (-not $colorFix -or ([string]$colorFix.sha256).ToUpperInvariant() -notmatch '^[0-9A-F]{64}$') {
+            throw "The ColorFix override metadata is invalid."
+        }
+        $colorFixPath = Resolve-CacheEntry ([string]$colorFix.entry) $CacheRoot
+        if (-not (Test-Path -LiteralPath $colorFixPath -PathType Leaf) -or
+            (Get-Item -LiteralPath $colorFixPath).Length -ne [long]$colorFix.bytes -or
+            (Get-Sha256 $colorFixPath) -ne ([string]$colorFix.sha256).ToUpperInvariant()) {
+            throw "The cached ColorFix override failed verification."
+        }
+        Write-Host "Cache verification passed: 32 skyboxes and 8 visual overrides." -ForegroundColor Green
         exit 0
     }
 
@@ -208,11 +307,13 @@ try {
     }
 
     $currentSelection = "vanilla"
+    $currentIsLegacy = $false
     $unknownManagedHash = $null
     if (Test-Path -LiteralPath $managedTarget -PathType Leaf) {
         $currentHash = Get-Sha256 $managedTarget
         if ($knownManagedHashes.ContainsKey($currentHash)) {
             $currentSelection = $knownManagedHashes[$currentHash]
+            $currentIsLegacy = $legacyManagedHashes.ContainsKey($currentHash)
         } else {
             $unknownManagedHash = $currentHash
         }
@@ -260,9 +361,84 @@ try {
 
         Set-Content -LiteralPath $selectionFile -Value $currentSelection -Encoding ASCII
         Write-Host "Status: installed - $currentSelection" -ForegroundColor Green
+        if ($currentIsLegacy) {
+            Write-Host "The old skybox package will be updated on the next selection." -ForegroundColor Yellow
+        }
         if ($legacyPresent.Count -gt 0) {
             Write-Host "Legacy selector files will be removed on the next selection." -ForegroundColor Yellow
             exit 11
+        }
+        exit 0
+    }
+
+    if ($Action -in @("veil-hide", "veil-show", "smoke-hide", "smoke-show", "names-hide", "names-show", "book-hide", "book-show", "markers-hide", "markers-show", "lines-hide", "lines-show", "fill-hide", "fill-show", "colorfix-on", "colorfix-off")) {
+        if (-not $addonsMounted) {
+            throw "gameinfo.gi does not mount citadel/addons. Run the GameInfo installer first."
+        }
+        $isSmoke = $Action.StartsWith("smoke-", [StringComparison]::Ordinal)
+        $isNames = $Action.StartsWith("names-", [StringComparison]::Ordinal)
+        $isBook = $Action.StartsWith("book-", [StringComparison]::Ordinal)
+        $isMarkers = $Action.StartsWith("markers-", [StringComparison]::Ordinal)
+        $isLines = $Action.StartsWith("lines-", [StringComparison]::Ordinal)
+        $isFill = $Action.StartsWith("fill-", [StringComparison]::Ordinal)
+        $isColorFix = $Action.StartsWith("colorfix-", [StringComparison]::Ordinal)
+        $effectName = if ($isColorFix) { "ColorFix" } elseif ($isFill) { "Modern ability fill" } elseif ($isLines) { "HP-bar lines" } elseif ($isMarkers) { "Player markers" } elseif ($isBook) { "Pickup book" } elseif ($isNames) { "Unit names" } elseif ($isSmoke) { "Factory smoke" } else { "Base veil" }
+        $override = if ($isColorFix) { $manifest.colorFixOverride } elseif ($isFill) { $manifest.classicAbilityFillOverride } elseif ($isLines) { $manifest.hideHealthLinesOverride } elseif ($isMarkers) { $manifest.hidePlayerMarkersOverride } elseif ($isBook) { $manifest.hidePickupBookOverride } elseif ($isNames) { $manifest.hideNamesOverride } elseif ($isSmoke) { $manifest.factorySmokeOverride } else { $manifest.baseVeilOverride }
+        $targetName = if ($isColorFix) { "pak10_dir.vpk" } elseif ($isFill) { "pak09_dir.vpk" } elseif ($isLines) { "pak08_dir.vpk" } elseif ($isMarkers) { "pak07_dir.vpk" } elseif ($isBook) { "pak06_dir.vpk" } elseif ($isNames) { "pak05_dir.vpk" } elseif ($isSmoke) { "pak04_dir.vpk" } else { "pak03_dir.vpk" }
+        $backupPrefix = if ($isColorFix) { "colorfix-" } elseif ($isFill) { "ability-fill-" } elseif ($isLines) { "hp-bar-lines-" } elseif ($isMarkers) { "player-markers-" } elseif ($isBook) { "pickup-book-" } elseif ($isNames) { "unit-names-" } elseif ($isSmoke) { "factory-smoke-" } else { "base-veil-" }
+        if (-not $override) { throw "The skybox cache has no $effectName override." }
+        $overrideBytes = [long]$override.bytes
+        $overrideHash = ([string]$override.sha256).ToUpperInvariant()
+        if ($overrideBytes -le 0 -or $overrideHash -notmatch '^[0-9A-F]{64}$') {
+            throw "The $effectName override metadata is invalid."
+        }
+        $overrideSource = Resolve-CacheEntry ([string]$override.entry) $CacheRoot
+        $overrideTarget = Join-Path $addonsRoot $targetName
+        Assert-ChildPath $overrideTarget $addonsRoot "the Deadlock addons directory"
+        Wait-ForManagedProcesses $DeadlockRoot $WaitTimeoutSeconds
+
+        $overrideInstalled = Test-Path -LiteralPath $overrideTarget -PathType Leaf
+        $installedHash = if ($overrideInstalled) { Get-Sha256 $overrideTarget } else { "" }
+        $legacyFillHashes = @(
+            'AA69FCB3F9E488654D66DD6C6D3B501109106377A12D03B74F6C2B4C65F185CB',
+            'BC31A1C4A901759671E6D13E10A0DCF3C806326110B42BC4F738C6B736F4DB3C'
+        )
+        $legacyFillInstalled = $isFill -and $installedHash -in $legacyFillHashes
+        if ($overrideInstalled -and $installedHash -ne $overrideHash -and -not $legacyFillInstalled) {
+            throw "$targetName belongs to another mod. Refusing to overwrite or remove it."
+        }
+        if (($isColorFix -and $Action -eq "colorfix-on") -or $Action.EndsWith("-hide", [StringComparison]::Ordinal)) {
+            if ($overrideInstalled -and -not $legacyFillInstalled) {
+                Write-Host "$effectName is already enabled." -ForegroundColor Green
+                exit 0
+            }
+            if (Test-Path -LiteralPath ($overrideTarget + ".patchwin-new")) {
+                throw "A temporary $targetName already exists; refusing to replace it."
+            }
+            New-Item -ItemType Directory -Path $addonsRoot -Force | Out-Null
+            if ($legacyFillInstalled) {
+                $backupPath = Join-Path $BackupRoot ($backupPrefix + (Get-Date -Format "yyyyMMdd-HHmmss-fff"))
+                New-Item -ItemType Directory -Path $backupPath -Force | Out-Null
+                $backupFile = Join-Path $backupPath $targetName
+                Copy-Item -LiteralPath $overrideTarget -Destination $backupFile
+                if ((Get-Sha256 $backupFile) -ne $installedHash) { throw "$effectName backup failed verification." }
+            }
+            Copy-VerifiedVariant $overrideSource $overrideTarget $overrideBytes $overrideHash
+            Write-Host "$effectName enabled. Restart Deadlock to see the change." -ForegroundColor Green
+        } else {
+            if (-not $overrideInstalled) {
+                Write-Host "$effectName is already disabled." -ForegroundColor Green
+                exit 0
+            }
+            $backupPath = Join-Path $BackupRoot ($backupPrefix + (Get-Date -Format "yyyyMMdd-HHmmss-fff"))
+            New-Item -ItemType Directory -Path $backupPath -Force | Out-Null
+            $backupFile = Join-Path $backupPath $targetName
+            Copy-Item -LiteralPath $overrideTarget -Destination $backupFile
+            if ((Get-Sha256 $backupFile) -ne $installedHash) { throw "$effectName backup failed verification." }
+            Remove-Item -LiteralPath $overrideTarget -Force
+            if (Test-Path -LiteralPath $overrideTarget) { throw "$effectName override was not removed." }
+            Write-Host "$effectName disabled. Restart Deadlock to see the change." -ForegroundColor Green
+            Write-Host "Backup: $backupPath"
         }
         exit 0
     }
@@ -271,9 +447,10 @@ try {
         throw "gameinfo.gi does not mount citadel/addons. Run the GameInfo installer first."
     }
 
-    Wait-ForManagedProcesses $DeadlockRoot
+    Wait-ForManagedProcesses $DeadlockRoot $WaitTimeoutSeconds
 
-    if ($currentSelection -eq $Selection -and -not $unknownManagedHash -and $legacyPathsPresent.Count -eq 0) {
+    if ($currentSelection -eq $Selection -and -not $currentIsLegacy -and
+        -not $unknownManagedHash -and $legacyPathsPresent.Count -eq 0) {
         Set-Content -LiteralPath $selectionFile -Value $Selection -Encoding ASCII
         Write-Host "Already selected: $Selection" -ForegroundColor Green
         exit 0
@@ -293,7 +470,7 @@ try {
         if (Test-Path -LiteralPath $path -PathType Leaf) {
             $pathHash = Get-Sha256 $path
             if ([string]::Equals($path, $managedTarget, [StringComparison]::OrdinalIgnoreCase) -and
-                $currentSelection -ne "vanilla") {
+                $currentSelection -ne "vanilla" -and -not $currentIsLegacy) {
                 $restoreVariant = $variantsById[$currentSelection]
                 $restoreSource = $variantPaths[$currentSelection]
                 $restoreBytes = [long]$restoreVariant.bytes

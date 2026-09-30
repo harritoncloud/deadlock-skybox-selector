@@ -32,10 +32,9 @@ A polished one-file Windows application for changing the atmosphere of Deadlock 
 | In-place switching | **Apply** changes the selected skybox without restarting the application. |
 | Safe override | Unknown skybox mods are verified, backed up, and then replaced transactionally. |
 | Vanilla restore | **Restore** removes only the managed override and leaves unrelated addons untouched. |
+| Eight visual fixes | A dedicated **Fixes** page controls base veil, factory smoke, unit names, the floating pickup book, player markers, HP-bar tick marks, classic ability fill, and ColorFix independently. |
 | Clean first run | Consent and loading screens prepare the local library without showing a console window. |
-| Optional FPS profile | A managed block is added to `autoexec.cfg`, preserving existing user settings. |
-| GameInfo component | Mounts `citadel/addons`, keeps client physics enabled, and creates a verified original backup. |
-| Default GameInfo restore | The compact **Default GI** button restores the first verified backup and preserves the current file. |
+| Saved GameInfo | The GameInfo page carries the exact configuration installed on 30 September 2026 and applies it only on request, with a backup. |
 
 The window can be moved from any non-interactive surface, and the greeting automatically uses the current Windows account name.
 
@@ -48,7 +47,21 @@ The window can be moved from any non-interactive surface, and the greeting autom
 5. Select a skybox card and press **Apply**.
 6. Press **Restore** whenever you want to return to the original Deadlock skybox.
 
-Use **Default GI** to restore the original `gameinfo.gi`. This button becomes available after the component has created its first verified backup.
+On the **Fixes** page, each row has a switch showing whether that visual fix is active. Close Deadlock before switching. A slot occupied by another mod is reported and never overwritten.
+
+**Base Veil** removes the large team-colored clouds without changing gameplay fog or the selected skybox (`pak03_dir.vpk`). **Factory Smoke** removes the factory's large black pollution cloud (`pak04_dir.vpk`).
+
+**Unit Names** uses the [Hide Names mod](https://gamebanana.com/mods/722348) (`pak05_dir.vpk`); it keeps health bars and names printed on map geometry. **Pickup Book** (`pak06_dir.vpk`) hides the brief model above the player after collecting a bonus. That gained-effect model is shared by several pickups, so their floating models may also disappear; the world pickups, reward, beam, and glow remain.
+
+**Player Markers** (`pak07_dir.vpk`) hides the in-world player-name, portrait, and distance indicator. It leaves the separate object indicators and minimap alone. The override patches only the `PlayerEntry.visible` rule in Deadlock's compiled `hud_unit_indicators_v2` stylesheet.
+
+**HP Bar Lines** (`pak08_dir.vpk`) hides the horizontal large and small tick marks inside the player's health bar. The health fill, border, and numeric values remain. The override changes only the two `#healthLines` opacity rules in Deadlock's compiled `hud_health` stylesheet.
+
+**Classic Ability Fill** (`pak09_dir.vpk`) restores a brighter purple fill and readable lavender checkmarks for purchased ability-upgrade rows, instead of the newer green fill. The AP counter is purple too; upgrade state is unchanged.
+
+**ColorFix** (`pak10_dir.vpk`) softens the scene's contrast through the game's post-processing profiles. It does not alter the HUD and can be switched off independently to restore the original look.
+
+The **GameInfo** page holds an exact snapshot of the current installed `gameinfo.gi` (SHA-256 `78695F98DC3FE3C2C4824DF769D8FFB1879F27DDA430CCF3B2E0A7C4B22DBC46`). **Apply Config** can reinstall this snapshot at any time, even when it already matches the game file. The file being replaced is backed up first. There is no GameInfo Restore button in the interface; backups remain on disk.
 
 The verified library is stored in `<Deadlock>/dlskybox`. Older `deadlockcustomskybox` and `patchwin.cc-skyboxes` caches are migrated automatically.
 
@@ -91,26 +104,21 @@ Silver Overcast through Nightlock.
   <img src="./unpacked/assets/previews/realistic-contact-sheet.jpg" width="100%" alt="Silver Overcast through Nightlock skybox previews">
 </a>
 
-## Optional FPS Profile
-
-The FPS button manages only its own marked block inside `autoexec.cfg`. Existing settings are preserved, a backup is created before replacement, and empty or missing config files are supported. Once installed, the button remains available as **Reinstall FPS config** and safely replaces the same managed block without creating duplicates.
-
-Client physics remains enabled. The included profile keeps `cl_ragdoll_limit "8"` without forcing `cl_phys_enabled` off.
-It also keeps the playtester survey disabled after restoring the stock `gameinfo.gi`.
-
 ## Safety Model
 
 | Protection | Implementation |
 | --- | --- |
-| Asset integrity | The embedded archive, runtime helpers, and all 32 VPK files are checked with SHA-256. |
+| Asset integrity | The embedded archive, runtime helpers, all 32 skybox VPKs, and eight visual fixes are checked with SHA-256. |
 | Path confinement | Cache, backup, and addon operations are restricted to validated child paths. |
 | Transactional switching | Sources are verified before copying; failed changes roll back to the previous verified file. |
 | Unknown-mod preservation | An unfamiliar `pak01_dir.vpk` receives a verified timestamped backup before override. |
 | Process guard | Skybox and GameInfo changes are blocked while Deadlock or supported mod managers are running. |
 | Cache recovery | Invalid caches are quarantined under an `.invalid-*` name rather than deleted. |
-| Config preservation | The FPS profile owns only its marked block and leaves all other `autoexec.cfg` content intact. |
+| Config preservation | Applying the saved GameInfo snapshot creates a timestamped backup of the current file. |
 
 The selector does not launch Deadlock and does not remain active after its window is closed.
+
+Asset inspection for the cosmetic switches was powered by [Source 2 Viewer](https://s2v.app) ([ValveResourceFormat](https://github.com/ValveResourceFormat/ValveResourceFormat)).
 
 ## Repository Contents
 
